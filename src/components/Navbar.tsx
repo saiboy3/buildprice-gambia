@@ -21,6 +21,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-4 text-sm font-medium text-gray-600">
           <Link href="/search" className="hover:text-primary-600 transition-colors">Prices</Link>
           <Link href="/suppliers" className="hover:text-primary-600 transition-colors">Suppliers</Link>
+          <Link href="/estimator" className="hover:text-primary-600 transition-colors">Estimator</Link>
           {user && (
             <Link href="/alerts" className="flex items-center gap-1 hover:text-primary-600 transition-colors">
               <Bell size={15} /> Alerts
@@ -62,8 +63,9 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 flex flex-col gap-3 text-sm font-medium text-gray-700">
-          <Link href="/search"    onClick={() => setOpen(false)}>Prices</Link>
-          <Link href="/suppliers" onClick={() => setOpen(false)}>Suppliers</Link>
+          <Link href="/search"     onClick={() => setOpen(false)}>Prices</Link>
+          <Link href="/suppliers"  onClick={() => setOpen(false)}>Suppliers</Link>
+          <Link href="/estimator"  onClick={() => setOpen(false)}>Estimator</Link>
           {user && <Link href="/alerts"              onClick={() => setOpen(false)}>🔔 Alerts</Link>}
           {isSupplier && <Link href="/supplier/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>}
           {isAdmin    && <Link href="/admin"               onClick={() => setOpen(false)}>Admin Panel</Link>}

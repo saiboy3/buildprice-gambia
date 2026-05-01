@@ -22,8 +22,9 @@ async function main() {
 
   // Materials
   const materials = await Promise.all([
-    prisma.material.upsert({ where: { id: 'mat-cement-opc' },   update: {}, create: { id: 'mat-cement-opc',   name: 'OPC Cement 42.5',    categoryId: cement.id } }),
-    prisma.material.upsert({ where: { id: 'mat-cement-ppc' },   update: {}, create: { id: 'mat-cement-ppc',   name: 'PPC Cement 32.5',    categoryId: cement.id } }),
+    prisma.material.upsert({ where: { id: 'mat-cement-opc' },   update: {}, create: { id: 'mat-cement-opc',   name: 'OPC Cement 42.5',       categoryId: cement.id } }),
+    prisma.material.upsert({ where: { id: 'mat-cement-ppc' },   update: {}, create: { id: 'mat-cement-ppc',   name: 'PPC Cement 32.5',       categoryId: cement.id } }),
+    prisma.material.upsert({ where: { id: 'mat-blocks-6in' },   update: {}, create: { id: 'mat-blocks-6in',   name: 'Concrete Blocks 6 inch', categoryId: cement.id } }),
     prisma.material.upsert({ where: { id: 'mat-rebar-12' },     update: {}, create: { id: 'mat-rebar-12',     name: 'Rebar 12mm',         categoryId: steel.id } }),
     prisma.material.upsert({ where: { id: 'mat-rebar-16' },     update: {}, create: { id: 'mat-rebar-16',     name: 'Rebar 16mm',         categoryId: steel.id } }),
     prisma.material.upsert({ where: { id: 'mat-sand-sharp' },   update: {}, create: { id: 'mat-sand-sharp',   name: 'Sharp Sand',         categoryId: sand.id } }),
@@ -59,12 +60,14 @@ async function main() {
 
   const priceSeeds: Array<{ suppIdx: number; matId: string; price: number; unit: string }> = [
     // Banjul
+    { suppIdx: 0, matId: 'mat-blocks-6in',   price: 28,   unit: 'block' },
     { suppIdx: 0, matId: 'mat-cement-opc',   price: 750,  unit: 'bag (50kg)' },
     { suppIdx: 0, matId: 'mat-cement-ppc',   price: 700,  unit: 'bag (50kg)' },
     { suppIdx: 0, matId: 'mat-rebar-12',     price: 2800, unit: 'ton' },
     { suppIdx: 0, matId: 'mat-sand-sharp',   price: 1200, unit: 'm³' },
     { suppIdx: 0, matId: 'mat-zinc-sheet',   price: 320,  unit: 'sheet (8ft)' },
     // Serrekunda
+    { suppIdx: 1, matId: 'mat-blocks-6in',   price: 26,   unit: 'block' },
     { suppIdx: 1, matId: 'mat-cement-opc',   price: 730,  unit: 'bag (50kg)' },
     { suppIdx: 1, matId: 'mat-cement-ppc',   price: 690,  unit: 'bag (50kg)' },
     { suppIdx: 1, matId: 'mat-rebar-12',     price: 2750, unit: 'ton' },

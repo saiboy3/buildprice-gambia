@@ -17,8 +17,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  alerts   Alert[]
-  supplier Supplier?
+  alerts    Alert[]
+  supplier  Supplier?
+  estimates Estimate[]
 }
 
 model Supplier {
@@ -91,4 +92,18 @@ model ActivityLog {
   action    String
   details   String?
   createdAt DateTime @default(now())
+}
+
+model Estimate {
+  id          String   @id @default(cuid())
+  shareToken  String   @unique @default(cuid())
+  projectName String
+  location    String   @default("")
+  inputs      String   // JSON blob of EstimatorInputs
+  results     String   // JSON blob of LineItem[]
+  totalCost   Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
