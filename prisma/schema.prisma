@@ -1,0 +1,94 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  password  String
+  role      String   @default("USER") // USER | SUPPLIER | ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  alerts   Alert[]
+  supplier Supplier?
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  contact   String
+  verified  Boolean  @default(false)
+  views     Int      @default(0)
+  inquiries Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String   @unique
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prices Price[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  materials Material[]
+}
+
+model Material {
+  id         String   @id @default(cuid())
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  prices     Price[]
+  alerts     Alert[]
+}
+
+model Price {
+  id          String   @id @default(cuid())
+  price       Float
+  unit        String
+  stockStatus String   @default("AVAILABLE") // AVAILABLE | OUT_OF_STOCK | LIMITED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([materialId, supplierId])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  targetPrice Float
+  active      Boolean  @default(true)
+  triggered   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
