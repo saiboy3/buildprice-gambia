@@ -13,13 +13,15 @@ model User {
   phone     String   @unique
   email     String?
   password  String
-  role      String   @default("USER") // USER | SUPPLIER | ADMIN
+  role      String   @default("USER") // USER | SUPPLIER | ADMIN | CONTRACTOR
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  alerts    Alert[]
-  supplier  Supplier?
-  estimates Estimate[]
+  alerts             Alert[]
+  supplier           Supplier?
+  estimates          Estimate[]
+  contractorProfile  Contractor?
+  contractorReviews  ContractorReview[]
 }
 
 model Supplier {
@@ -92,6 +94,41 @@ model ActivityLog {
   action    String
   details   String?
   createdAt DateTime @default(now())
+}
+
+model Contractor {
+  id          String   @id @default(cuid())
+  name        String
+  specialty   String   // e.g. "Masonry & Blockwork", "Roofing", "General Contractor"
+  location    String
+  contact     String
+  bio         String   @default("")
+  yearsExp    Int      @default(0)
+  verified    Boolean  @default(false)
+  verifiedAt  DateTime?
+  avgRating   Float    @default(0)
+  reviewCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId  String?  @unique
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reviews ContractorReview[]
+}
+
+model ContractorReview {
+  id          String   @id @default(cuid())
+  rating      Int      // 1-5
+  comment     String   @default("")
+  projectType String   @default("")
+  createdAt   DateTime @default(now())
+
+  contractorId String
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contractorId, userId])
 }
 
 model Estimate {

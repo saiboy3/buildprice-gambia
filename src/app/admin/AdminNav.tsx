@@ -3,14 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/context'
-import { HardHat, LayoutDashboard, Package, Store, Users, ScrollText, LogOut } from 'lucide-react'
+import { HardHat, LayoutDashboard, Package, Store, Users, ScrollText, LogOut, Hammer } from 'lucide-react'
 import clsx from 'clsx'
 
 const links = [
   { href: '/admin',           label: 'Overview',   icon: LayoutDashboard },
   { href: '/admin/materials', label: 'Materials',  icon: Package },
-  { href: '/admin/suppliers', label: 'Suppliers',  icon: Store },
-  { href: '/admin/users',     label: 'Users',      icon: Users },
+  { href: '/admin/suppliers',   label: 'Suppliers',   icon: Store },
+  { href: '/admin/contractors', label: 'Contractors', icon: Hammer },
+  { href: '/admin/users',       label: 'Users',       icon: Users },
   { href: '/admin/logs',      label: 'Activity',   icon: ScrollText },
 ]
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Package, Store, Users, ScrollText, TrendingUp, Loader2 } from 'lucide-react'
+import { Package, Store, Users, ScrollText, TrendingUp, Loader2, Hammer } from 'lucide-react'
 import Link from 'next/link'
 
 type Log = { id: string; action: string; details: string | null; userId: string | null; createdAt: string }
@@ -11,7 +11,7 @@ type Log = { id: string; action: string; details: string | null; userId: string 
 export default function AdminOverview() {
   const { isAdmin, token } = useAuth()
   const router = useRouter()
-  const [stats,   setStats]   = useState({ materials: 0, suppliers: 0, users: 0, prices: 0 })
+  const [stats,   setStats]   = useState({ materials: 0, suppliers: 0, users: 0, prices: 0, contractors: 0 })
   const [logs,    setLogs]    = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -20,15 +20,17 @@ export default function AdminOverview() {
     const h = { Authorization: `Bearer ${token}` }
     Promise.all([
       fetch('/api/materials').then(r => r.json()),
-      fetch('/api/admin/suppliers', { headers: h }).then(r => r.json()),
-      fetch('/api/admin/users',     { headers: h }).then(r => r.json()),
-      fetch('/api/admin/logs?limit=10', { headers: h }).then(r => r.json()),
-    ]).then(([mats, supps, users, logsData]) => {
+      fetch('/api/admin/suppliers',    { headers: h }).then(r => r.json()),
+      fetch('/api/admin/users',        { headers: h }).then(r => r.json()),
+      fetch('/api/admin/logs?limit=10',{ headers: h }).then(r => r.json()),
+      fetch('/api/admin/contractors',  { headers: h }).then(r => r.json()),
+    ]).then(([mats, supps, users, logsData, contractors]) => {
       setStats({
-        materials: mats.ok  ? mats.data.length  : 0,
-        suppliers: supps.ok ? supps.data.length : 0,
-        users:     users.ok ? users.data.length : 0,
-        prices:    mats.ok  ? mats.data.reduce((s: number, m: any) => s + m.prices.length, 0) : 0,
+        materials:   mats.ok         ? mats.data.length         : 0,
+        suppliers:   supps.ok        ? supps.data.length        : 0,
+        users:       users.ok        ? users.data.length        : 0,
+        prices:      mats.ok         ? mats.data.reduce((s: number, m: any) => s + m.prices.length, 0) : 0,
+        contractors: contractors.ok  ? contractors.data.length  : 0,
       })
       if (logsData.ok) setLogs(logsData.data.slice(0, 10))
     }).finally(() => setLoading(false))
@@ -44,10 +46,10 @@ export default function AdminOverview() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: Package,    label: 'Materials',  value: stats.materials, href: '/admin/materials' },
-          { icon: Store,      label: 'Suppliers',  value: stats.suppliers, href: '/admin/suppliers' },
-          { icon: Users,      label: 'Users',      value: stats.users,     href: '/admin/users' },
-          { icon: TrendingUp, label: 'Prices',     value: stats.prices,    href: '/admin/materials' },
+          { icon: Package,    label: 'Materials',   value: stats.materials,   href: '/admin/materials' },
+          { icon: Store,      label: 'Suppliers',   value: stats.suppliers,   href: '/admin/suppliers' },
+          { icon: Hammer,     label: 'Contractors', value: stats.contractors, href: '/admin/contractors' },
+          { icon: Users,      label: 'Users',       value: stats.users,       href: '/admin/users' },
         ].map(({ icon: Icon, label, value, href }) => (
           <Link key={label} href={href} className="card hover:border-primary-200 hover:shadow transition-all text-center group">
             <Icon size={22} className="mx-auto text-primary-500 mb-2" />

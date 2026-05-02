@@ -109,6 +109,95 @@ async function main() {
     })
   }
 
+  // Demo contractors
+  const contractorSeeds = [
+    {
+      phone: '2202001001', name: 'Omar Jallow Construction',
+      specialty: 'General Contractor', location: 'Banjul',
+      contact: '+220 200 1001', bio: 'Over 15 years building homes and commercial properties across Greater Banjul. Specialises in full turnkey residential builds.',
+      yearsExp: 15, verified: true,
+    },
+    {
+      phone: '2202002002', name: 'Lamin Touray Masonry',
+      specialty: 'Masonry & Blockwork', location: 'Serrekunda',
+      contact: '+220 200 2002', bio: 'Expert bricklayer and blockwork specialist. Fast, clean work with attention to structural integrity. Over 10 years of experience.',
+      yearsExp: 10, verified: true,
+    },
+    {
+      phone: '2202003003', name: 'Bakary Ceesay Roofing',
+      specialty: 'Roofing', location: 'Bakau',
+      contact: '+220 200 3003', bio: 'Specialist in corrugated zinc and flat roofing systems. Offers free site assessment and competitive rates.',
+      yearsExp: 8, verified: false,
+    },
+    {
+      phone: '2202004004', name: 'Fatou Drammeh Plumbing & Electrical',
+      specialty: 'Plumbing', location: 'Kanifing',
+      contact: '+220 200 4004', bio: 'Licensed plumber and electrician covering all of the Greater Banjul area. Residential and commercial.',
+      yearsExp: 6, verified: true,
+    },
+    {
+      phone: '2202005005', name: 'Modou Sowe Carpentry',
+      specialty: 'Carpentry & Joinery', location: 'Brikama',
+      contact: '+220 200 5005', bio: 'Custom doors, windows, and interior joinery. Sourcing timber locally to keep costs competitive.',
+      yearsExp: 12, verified: false,
+    },
+  ]
+
+  const reviewSeeds: Array<{ contractorIdx: number; rating: number; comment: string; projectType: string }> = [
+    { contractorIdx: 0, rating: 5, comment: 'Omar built our 4-bedroom house on time and within budget. Highly recommend.', projectType: 'Residential Build' },
+    { contractorIdx: 0, rating: 4, comment: 'Very professional, good communication throughout. Minor delay but well handled.', projectType: 'Commercial Extension' },
+    { contractorIdx: 1, rating: 5, comment: 'Exceptional blockwork — straight walls and clean joints. Will use again.', projectType: 'Perimeter Wall' },
+    { contractorIdx: 1, rating: 5, comment: 'Fast and affordable. Laid 2,000 blocks in 4 days with a small crew.', projectType: 'House Foundation & Walls' },
+    { contractorIdx: 2, rating: 3, comment: 'Good work overall but took longer than quoted. Quality of finish was fine.', projectType: 'Roof Replacement' },
+    { contractorIdx: 3, rating: 5, comment: 'Fatou fixed our water supply issues in one day. Very knowledgeable.', projectType: 'Plumbing Repair' },
+    { contractorIdx: 3, rating: 4, comment: 'Neat electrical installation, all within code. Prompt and polite.', projectType: 'New Build Wiring' },
+  ]
+
+  // Get admin user for review seeding (use as reviewer placeholder)
+  const adminUser = await prisma.user.findUnique({ where: { phone: process.env.ADMIN_PHONE ?? '0000000000' } })
+
+  const contractorRecords: any[] = []
+  for (const c of contractorSeeds) {
+    const hash = await bcrypt.hash('contractor123', 10)
+    const user = await prisma.user.upsert({
+      where:  { phone: c.phone },
+      update: {},
+      create: { name: c.name, phone: c.phone, password: hash, role: 'CONTRACTOR' },
+    })
+    const avgRating = reviewSeeds
+      .filter((_, i) => contractorSeeds.indexOf(c) === _.contractorIdx)
+      .reduce((s, r, _, arr) => s + r.rating / arr.length, 0)
+    const reviewCount = reviewSeeds.filter(r => contractorSeeds.indexOf(c) === r.contractorIdx).length
+    const contractor = await prisma.contractor.upsert({
+      where:  { userId: user.id },
+      update: { avgRating: Math.round(avgRating * 10) / 10, reviewCount },
+      create: {
+        name: c.name, specialty: c.specialty, location: c.location,
+        contact: c.contact, bio: c.bio, yearsExp: c.yearsExp,
+        verified: c.verified, verifiedAt: c.verified ? new Date() : null,
+        avgRating: Math.round(avgRating * 10) / 10, reviewCount,
+        userId: user.id,
+      },
+    })
+    contractorRecords.push(contractor)
+  }
+
+  // Seed reviews (attributed to admin user as demo reviewer)
+  if (adminUser) {
+    for (const r of reviewSeeds) {
+      const contractor = contractorRecords[r.contractorIdx]
+      if (!contractor) continue
+      await prisma.contractorReview.upsert({
+        where:  { contractorId_userId: { contractorId: contractor.id, userId: adminUser.id + '_' + r.contractorIdx } },
+        update: {},
+        create: {
+          rating: r.rating, comment: r.comment, projectType: r.projectType,
+          contractorId: contractor.id, userId: adminUser.id,
+        },
+      }).catch(() => {}) // ignore duplicate key (admin can only have 1 review per contractor)
+    }
+  }
+
   await prisma.activityLog.create({ data: { action: 'SEED', details: 'Database seeded successfully' } })
   console.log('✅ Seed complete')
 }
