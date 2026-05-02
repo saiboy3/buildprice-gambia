@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAuth } from '@/lib/context'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   MapPin, Phone, ShieldCheck, Star, Clock, Send, Trash2,
   ChevronLeft, HardHat, Loader2,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { avatarColor, initials, SPECIALTY_META } from '@/lib/visual'
 
 type Review = {
   id: string; rating: number; comment: string; projectType: string
@@ -126,48 +128,82 @@ export default function ContractorProfilePage() {
     load()
   }
 
+  const bg    = avatarColor(contractor.name)
+  const ini   = initials(contractor.name)
+  const smeta = SPECIALTY_META[contractor.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', emoji: '🏗️' }
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href="/contractors" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 mb-6 transition-colors">
-        <ChevronLeft size={16} /> All contractors
-      </Link>
-
-      {/* Profile card */}
-      <div className="card mb-6 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-          <div>
-            <div className="flex items-center gap-3 flex-wrap mb-1">
-              <h1 className="text-2xl font-extrabold text-gray-900">{contractor.name}</h1>
-              {contractor.verified && (
-                <span className="flex items-center gap-1 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
-                  <ShieldCheck size={14} /> Verified by BuildPriceGambia
-                </span>
-              )}
-            </div>
-            <span className="inline-block text-sm font-semibold bg-primary-50 text-primary-700 px-3 py-0.5 rounded-full">
-              {contractor.specialty}
-            </span>
-          </div>
-          <a href={`tel:${contractor.contact}`}
-            className="btn-primary text-sm px-4 py-2">
-            <Phone size={14} /> Call Contractor
-          </a>
+    <div>
+      {/* ── Hero banner ──────────────────────────────────────────────── */}
+      <section className="relative bg-gray-900 h-48 md:h-64 overflow-hidden">
+        <Image
+          src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1920&q=75"
+          alt="Construction site"
+          fill
+          sizes="100vw"
+          className="object-cover object-center opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+        <div className="relative z-10 max-w-4xl mx-auto px-4 h-full flex items-end pb-6">
+          <Link href="/contractors" className="flex items-center gap-1.5 text-sm text-gray-300 hover:text-white transition-colors">
+            <ChevronLeft size={16} /> All contractors
+          </Link>
         </div>
+      </section>
 
-        <div className="grid sm:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
-          <span className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /> {contractor.location}</span>
-          <span className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /> {contractor.contact}</span>
-          {contractor.yearsExp > 0 && (
-            <span className="flex items-center gap-2"><Clock size={14} className="text-gray-400" /> {contractor.yearsExp} years experience</span>
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Profile card — overlapping the banner */}
+        <div className="card -mt-6 mb-6 p-0 overflow-hidden shadow-lg">
+          {/* Coloured top bar */}
+          <div className={`${bg} px-6 py-4 flex flex-wrap items-center justify-between gap-4`}>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-white/25 border-2 border-white/40 flex items-center justify-center text-white font-extrabold text-xl shadow-inner shrink-0">
+                {ini}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl md:text-2xl font-extrabold text-white">{contractor.name}</h1>
+                  {contractor.verified && (
+                    <span className="flex items-center gap-1 text-xs font-semibold bg-white/20 text-white border border-white/30 px-2 py-0.5 rounded-full">
+                      <ShieldCheck size={12} /> Verified
+                    </span>
+                  )}
+                </div>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${smeta.color} ${smeta.text}`}>
+                  {smeta.emoji} {contractor.specialty}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="px-6 py-5 flex flex-wrap items-start justify-between gap-4">
+            <div className="grid sm:grid-cols-2 gap-3 text-sm text-gray-600 flex-1">
+              <span className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /> {contractor.location}</span>
+              <span className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /> {contractor.contact}</span>
+              {contractor.yearsExp > 0 && (
+                <span className="flex items-center gap-2"><Clock size={14} className="text-gray-400" /> {contractor.yearsExp} years experience</span>
+              )}
+              <div className="flex items-center gap-2">
+                <Stars rating={contractor.avgRating} size={14} />
+                <span className="font-semibold">{contractor.avgRating > 0 ? contractor.avgRating.toFixed(1) : '—'}</span>
+                <span className="text-gray-400 text-xs">({contractor.reviewCount} reviews)</span>
+              </div>
+            </div>
+            <a href={`tel:${contractor.contact}`}
+              className="btn-primary text-sm px-4 py-2">
+              <Phone size={14} /> Call Contractor
+            </a>
+          </div>
+
+          {contractor.bio && (
+            <div className="px-6 pb-5 border-t border-gray-100 pt-4">
+              <p className="text-gray-600 text-sm leading-relaxed">{contractor.bio}</p>
+            </div>
           )}
         </div>
 
-        {contractor.bio && (
-          <p className="text-gray-600 text-sm leading-relaxed border-t border-gray-100 pt-4">{contractor.bio}</p>
-        )}
-      </div>
-
-      {/* Rating summary */}
+        {/* Rating summary */}
       <div className="grid sm:grid-cols-2 gap-6 mb-8">
         <div className="card p-5 flex flex-col items-center justify-center text-center">
           <p className="text-5xl font-extrabold text-gray-900 mb-1">
@@ -269,6 +305,7 @@ export default function ContractorProfilePage() {
           </div>
         )}
       </div>
+      </div>{/* /max-w-4xl */}
     </div>
   )
 }
