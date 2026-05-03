@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!supplier) {
       return NextResponse.json({ ok: false, message: 'Supplier not found' }, { status: 404 })
     }
-    return NextResponse.json({ ok: true, data: supplier })
+    return NextResponse.json({ ok: true, data: supplier.reviews })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ ok: false, message: 'Internal server error' }, { status: 500 })
