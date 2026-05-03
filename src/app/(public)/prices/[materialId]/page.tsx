@@ -3,18 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
-import { ChevronLeft, TrendingUp, Loader2, Package } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from 'recharts'
+import { ChevronLeft, TrendingUp, Loader2, Package } from 'lucide-react'
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f97316']
 
 type HistoryEntry = {
   date: string
-  [supplier: string]: number | string
+  [supplierName: string]: number | string
 }
 
 type CurrentPrice = {
@@ -32,59 +31,80 @@ type MaterialInfo = {
   category: { name: string }
 }
 
+// Shape returned by /api/prices/history
+type GroupedHistory = Record<string, {
+  supplier: { id: string; name: string; location: string }
+  history: Array<{ newPrice: number; changedAt: string; unit: string }>
+}>
+
 export default function PriceHistoryPage() {
   const { materialId } = useParams<{ materialId: string }>()
 
-  const [material,       setMaterial]       = useState<MaterialInfo | null>(null)
-  const [historyData,    setHistoryData]     = useState<HistoryEntry[]>([])
-  const [currentPrices,  setCurrentPrices]  = useState<CurrentPrice[]>([])
-  const [suppliers,      setSuppliers]      = useState<string[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [error,          setError]          = useState('')
+  const [material,      setMaterial]      = useState<MaterialInfo | null>(null)
+  const [historyData,   setHistoryData]   = useState<HistoryEntry[]>([])
+  const [currentPrices, setCurrentPrices] = useState<CurrentPrice[]>([])
+  const [suppliers,     setSuppliers]     = useState<string[]>([])
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState('')
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       setError('')
       try {
-        const [matsRes, histRes] = await Promise.all([
+        const [matsRes, histRes, curRes] = await Promise.all([
           fetch('/api/materials'),
           fetch(`/api/prices/history?materialId=${materialId}`),
+          fetch(`/api/prices?material_id=${materialId}`),
         ])
-        const matsJson = await matsRes.json()
-        const histJson = await histRes.json()
+        const [matsJson, histJson, curJson] = await Promise.all([
+          matsRes.json(),
+          histRes.json(),
+          curRes.json(),
+        ])
 
+        // ── Material info ─────────────────────────────────────────────────
         if (matsJson.ok) {
           const found = (matsJson.data as MaterialInfo[]).find(m => m.id === materialId)
           setMaterial(found ?? null)
         }
 
-        if (histJson.ok) {
-          // histJson.data shape: [{ date, supplierId, supplierName, price }]
-          const raw: Array<{ date: string; supplierName: string; price: number }> = histJson.data
-
-          // Build supplier list
-          const supplierNames = [...new Set(raw.map(r => r.supplierName))]
-          setSuppliers(supplierNames)
-
-          // Group by date
-          const byDate: Record<string, HistoryEntry> = {}
-          raw.forEach(({ date, supplierName, price }) => {
-            const d = date.slice(0, 10)
-            if (!byDate[d]) byDate[d] = { date: d }
-            byDate[d][supplierName] = price
-          })
-          setHistoryData(Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date)))
-
-          // Current prices (latest per supplier)
-          const latestBySupplier: Record<string, CurrentPrice> = {}
-          // Fetch current prices
-          const curRes  = await fetch(`/api/prices?materialId=${materialId}`)
-          const curJson = await curRes.json()
-          if (curJson.ok) setCurrentPrices(curJson.data)
+        // ── Current prices ────────────────────────────────────────────────
+        if (curJson.ok) {
+          setCurrentPrices(curJson.data as CurrentPrice[])
         }
-      } catch (e) {
-        setError('Failed to load price history.')
+
+        // ── Price history ─────────────────────────────────────────────────
+        if (histJson.ok) {
+          // API returns: Record<supplierId, { supplier, history[] }>
+          const grouped = histJson.data as GroupedHistory
+          const supplierEntries = Object.values(grouped)
+
+          if (supplierEntries.length === 0) {
+            setHistoryData([])
+            setSuppliers([])
+          } else {
+            const supplierNames = supplierEntries.map(e => e.supplier.name)
+            setSuppliers(supplierNames)
+
+            // Build chart rows keyed by date
+            const byDate: Record<string, HistoryEntry> = {}
+
+            supplierEntries.forEach(({ supplier, history }) => {
+              history.forEach(h => {
+                const d = new Date(h.changedAt).toISOString().slice(0, 10)
+                if (!byDate[d]) byDate[d] = { date: d }
+                byDate[d][supplier.name] = h.newPrice
+              })
+            })
+
+            setHistoryData(
+              Object.values(byDate).sort((a, b) => String(a.date).localeCompare(String(b.date)))
+            )
+          }
+        }
+      } catch {
+        setError('Failed to load price data. Please try again.')
       } finally {
         setLoading(false)
       }
@@ -112,7 +132,7 @@ export default function PriceHistoryPage() {
         <Package size={28} className="text-primary-500 shrink-0 mt-1" />
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900">
-            {material?.name ?? 'Material Price History'}
+            {material?.name ?? 'Price History'}
           </h1>
           {material?.category && (
             <p className="text-sm text-gray-400 mt-0.5">{material.category.name}</p>
@@ -121,29 +141,41 @@ export default function PriceHistoryPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">
+          {error}
+        </div>
       )}
 
-      {/* Chart */}
+      {/* Price history chart */}
       <div className="card mb-6 p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp size={16} className="text-primary-500" />
-          <h2 className="font-bold text-gray-900">Price History by Supplier</h2>
+          <h2 className="font-bold text-gray-900">Price Trend (last 90 days)</h2>
         </div>
 
         {historyData.length === 0 ? (
-          <p className="text-gray-400 text-center py-12 text-sm">No historical data available yet.</p>
+          <p className="text-gray-400 text-center py-12 text-sm">
+            No historical price changes recorded yet.
+            Prices will appear here as suppliers update their listings.
+          </p>
         ) : (
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={historyData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => {
-                const dt = new Date(d)
-                return `${dt.getDate()}/${dt.getMonth() + 1}`
-              }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `D${v.toLocaleString()}`} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11 }}
+                tickFormatter={d => {
+                  const dt = new Date(d)
+                  return `${dt.getDate()}/${dt.getMonth() + 1}`
+                }}
+              />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                tickFormatter={v => `D${Number(v).toLocaleString()}`}
+              />
               <Tooltip
-                formatter={(value) => [`D${Number(value).toLocaleString()}`, '']}
+                formatter={(value) => [`D${Number(value ?? 0).toLocaleString()}`, '']}
                 labelFormatter={label => `Date: ${label}`}
               />
               <Legend />
@@ -165,7 +197,15 @@ export default function PriceHistoryPage() {
 
       {/* Current prices table */}
       <div className="card">
-        <h2 className="font-bold text-gray-900 mb-4">Current Prices</h2>
+        <h2 className="font-bold text-gray-900 mb-4">
+          Current Prices
+          {currentPrices.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              {currentPrices.length} supplier{currentPrices.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </h2>
+
         {currentPrices.length === 0 ? (
           <p className="text-gray-400 text-sm text-center py-8">No current prices listed.</p>
         ) : (
@@ -182,18 +222,27 @@ export default function PriceHistoryPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[...currentPrices].sort((a, b) => a.price - b.price).map(p => (
-                  <tr key={p.id} className={p.price === lowestPrice ? 'bg-green-50' : 'hover:bg-gray-50'}>
+                  <tr
+                    key={p.id}
+                    className={p.price === lowestPrice ? 'bg-green-50' : 'hover:bg-gray-50'}
+                  >
                     <td className="px-4 py-3">
-                      <Link href={`/suppliers/${p.supplier.id}`} className="font-medium text-gray-900 hover:text-primary-600">
+                      <Link
+                        href={`/suppliers/${p.supplier.id}`}
+                        className="font-medium text-gray-900 hover:text-primary-600"
+                      >
                         {p.supplier.name}
                       </Link>
                       {p.price === lowestPrice && (
-                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">Lowest</span>
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
+                          Lowest
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{p.supplier.location}</td>
                     <td className="px-4 py-3 text-right font-bold text-gray-900">
-                      D{p.price.toLocaleString()} <span className="text-xs font-normal text-gray-400">/{p.unit}</span>
+                      D{p.price.toLocaleString()}
+                      <span className="text-xs font-normal text-gray-400 ml-1">/{p.unit}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -201,10 +250,13 @@ export default function PriceHistoryPage() {
                         p.stockStatus === 'LIMITED'   ? 'bg-yellow-100 text-yellow-700' :
                                                         'bg-red-100 text-red-700'
                       }`}>
-                        {p.stockStatus === 'AVAILABLE' ? 'In stock' : p.stockStatus === 'LIMITED' ? 'Limited' : 'Out of stock'}
+                        {p.stockStatus === 'AVAILABLE' ? 'In stock'
+                          : p.stockStatus === 'LIMITED' ? 'Limited' : 'Out of stock'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{new Date(p.updatedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400">
+                      {new Date(p.updatedAt).toLocaleDateString('en-GB')}
+                    </td>
                   </tr>
                 ))}
               </tbody>

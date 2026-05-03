@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation'
 import { Eye, MessageSquare, Package, TrendingUp, Star, Download, Loader2, BarChart2 } from 'lucide-react'
 
 type Analytics = {
-  totalViews:       number
-  totalInquiries:   number
-  pricesListed:     number
-  avgPrice:         number
-  avgRating:        number
-  reviewCount:      number
-  topMaterials:     Array<{ name: string; views: number; lowestPrice: number; unit: string }>
-  recentChanges:    Array<{ materialName: string; oldPrice: number; newPrice: number; changedAt: string }>
+  totalViews:     number
+  totalInquiries: number
+  priceCount:     number
+  avgPrice:       number
+  avgRating:      number
+  reviewCount:    number
+  topMaterials:   Array<{ name: string; priceCount: number; avgPrice: number }>
+  recentHistory:  Array<{ oldPrice: number; newPrice: number; changedAt: string; material: { name: string } }>
 }
 
 export default function SupplierAnalyticsPage() {
@@ -73,7 +73,7 @@ export default function SupplierAnalyticsPage() {
         {[
           { icon: Eye,            label: 'Profile views',     value: data.totalViews.toLocaleString() },
           { icon: MessageSquare,  label: 'Inquiries',         value: data.totalInquiries.toLocaleString() },
-          { icon: Package,        label: 'Prices listed',     value: data.pricesListed.toLocaleString() },
+          { icon: Package,        label: 'Prices listed',     value: data.priceCount.toLocaleString() },
           { icon: TrendingUp,     label: 'Avg price (D)',     value: data.avgPrice > 0 ? `D${data.avgPrice.toLocaleString()}` : '—' },
           { icon: Star,           label: 'Avg rating',        value: data.avgRating > 0 ? data.avgRating.toFixed(1) : '—' },
           { icon: Star,           label: 'Total reviews',     value: data.reviewCount.toLocaleString() },
@@ -89,7 +89,7 @@ export default function SupplierAnalyticsPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Top materials */}
         <div className="card">
-          <h2 className="font-bold text-gray-900 mb-4">Top Materials by Views</h2>
+          <h2 className="font-bold text-gray-900 mb-4">Top Materials Listed</h2>
           {data.topMaterials.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-6">No data available.</p>
           ) : (
@@ -98,16 +98,16 @@ export default function SupplierAnalyticsPage() {
                 <thead className="text-xs text-gray-400 uppercase border-b border-gray-100">
                   <tr>
                     <th className="text-left py-2">Material</th>
-                    <th className="text-right py-2">Your price</th>
-                    <th className="text-right py-2">Views</th>
+                    <th className="text-right py-2">Avg price</th>
+                    <th className="text-right py-2">Listings</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {data.topMaterials.map(m => (
                     <tr key={m.name} className="hover:bg-gray-50">
                       <td className="py-2.5 font-medium text-gray-800">{m.name}</td>
-                      <td className="py-2.5 text-right text-gray-600">D{m.lowestPrice.toLocaleString()} <span className="text-xs text-gray-400">/{m.unit}</span></td>
-                      <td className="py-2.5 text-right font-semibold text-gray-900">{m.views.toLocaleString()}</td>
+                      <td className="py-2.5 text-right text-gray-600">D{m.avgPrice.toLocaleString()}</td>
+                      <td className="py-2.5 text-right font-semibold text-gray-900">{m.priceCount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -119,14 +119,14 @@ export default function SupplierAnalyticsPage() {
         {/* Recent price changes */}
         <div className="card">
           <h2 className="font-bold text-gray-900 mb-4">Recent Price Changes</h2>
-          {data.recentChanges.length === 0 ? (
+          {data.recentHistory.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-6">No recent changes.</p>
           ) : (
             <div className="space-y-3">
-              {data.recentChanges.map((c, i) => (
+              {data.recentHistory.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-sm border-b border-gray-50 pb-2 last:border-0">
                   <div>
-                    <p className="font-medium text-gray-800">{c.materialName}</p>
+                    <p className="font-medium text-gray-800">{c.material.name}</p>
                     <p className="text-xs text-gray-400">{new Date(c.changedAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
