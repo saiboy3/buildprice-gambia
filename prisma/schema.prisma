@@ -7,6 +7,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -22,23 +24,47 @@ model User {
   estimates          Estimate[]
   contractorProfile  Contractor?
   contractorReviews  ContractorReview[]
+  supplierReviews    SupplierReview[]
+  rfqs               RFQ[]
+  stockAlerts        StockAlert[]
+  forumThreads       ForumThread[]
+  forumReplies       ForumReply[]
+  apiKeys            ApiKey[]
 }
+
+// ─── Suppliers ────────────────────────────────────────────────────────────────
 
 model Supplier {
-  id        String   @id @default(cuid())
-  name      String
-  location  String
-  contact   String
-  verified  Boolean  @default(false)
-  views     Int      @default(0)
-  inquiries Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  location           String
+  contact            String
+  verified           Boolean  @default(false)
+  views              Int      @default(0)
+  inquiries          Int      @default(0)
+  avgRating          Float    @default(0)
+  reviewCount        Int      @default(0)
+  lat                Float?
+  lng                Float?
+  verificationStatus String   @default("UNVERIFIED") // UNVERIFIED | PENDING | APPROVED | REJECTED
+  verificationDocs   String   @default("[]")          // JSON array of doc URLs
+  verificationNote   String   @default("")
+  verifiedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  userId String   @unique
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prices Price[]
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prices           Price[]
+  reviews          SupplierReview[]
+  rfqQuotes        RFQQuote[]
+  deliveryAreas    DeliveryArea[]
+  promotedListings PromotedListing[]
+  priceHistories   PriceHistory[]
+  stockAlerts      StockAlert[]
 }
+
+// ─── Materials ────────────────────────────────────────────────────────────────
 
 model Category {
   id        String     @id @default(cuid())
@@ -53,10 +79,15 @@ model Material {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-  prices     Price[]
-  alerts     Alert[]
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id])
+  prices        Price[]
+  alerts        Alert[]
+  stockAlerts   StockAlert[]
+  priceHistories PriceHistory[]
+  fraudAlerts   FraudAlert[]
+  priceIndexes  PriceIndex[]
+  guides        MaterialGuide[]
 }
 
 model Price {
@@ -67,13 +98,45 @@ model Price {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  materialId   String
+  material     Material       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  supplierId   String
+  supplier     Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  history      PriceHistory[]
+  bulkDiscounts BulkDiscount[]
+
+  @@unique([materialId, supplierId])
+}
+
+// ─── Price History & Discounts ────────────────────────────────────────────────
+
+model PriceHistory {
+  id         String   @id @default(cuid())
+  oldPrice   Float
+  newPrice   Float
+  unit       String
+  changedAt  DateTime @default(now())
+
+  priceId    String
+  price      Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
   materialId String
   material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
   supplierId String
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@unique([materialId, supplierId])
 }
+
+model BulkDiscount {
+  id          String   @id @default(cuid())
+  minQty      Int
+  discountPct Float    // e.g. 5 = 5%
+  note        String   @default("")
+  createdAt   DateTime @default(now())
+
+  priceId String
+  price   Price  @relation(fields: [priceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
 
 model Alert {
   id          String   @id @default(cuid())
@@ -88,37 +151,139 @@ model Alert {
   material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
 }
 
-model ActivityLog {
+model StockAlert {
   id        String   @id @default(cuid())
-  userId    String?
-  action    String
-  details   String?
+  active    Boolean  @default(true)
+  notified  Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material  @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, materialId, supplierId])
 }
 
+// ─── RFQ System ───────────────────────────────────────────────────────────────
+
+model RFQ {
+  id          String    @id @default(cuid())
+  title       String
+  boqJson     String    // JSON array of line items
+  location    String    @default("")
+  status      String    @default("OPEN") // OPEN | CLOSED | AWARDED
+  deadline    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId  String
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotes  RFQQuote[]
+}
+
+model RFQQuote {
+  id         String   @id @default(cuid())
+  totalPrice Float
+  message    String   @default("")
+  status     String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  createdAt  DateTime @default(now())
+
+  rfqId      String
+  rfq        RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, supplierId])
+}
+
+// ─── Delivery Areas ───────────────────────────────────────────────────────────
+
+model DeliveryArea {
+  id         String   @id @default(cuid())
+  regionName String
+  radiusKm   Float?
+  createdAt  DateTime @default(now())
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+}
+
+// ─── Promoted Listings ────────────────────────────────────────────────────────
+
+model PromotedListing {
+  id        String   @id @default(cuid())
+  placement String   @default("SEARCH") // SEARCH | HOMEPAGE | CATEGORY
+  startsAt  DateTime
+  endsAt    DateTime
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+}
+
+// ─── Neighbourhood Price Index ────────────────────────────────────────────────
+
+model PriceIndex {
+  id           String   @id @default(cuid())
+  neighbourhood String
+  avgPrice     Float
+  minPrice     Float
+  maxPrice     Float
+  sampleCount  Int
+  weekStart    DateTime
+  createdAt    DateTime @default(now())
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@unique([neighbourhood, materialId, weekStart])
+}
+
+// ─── Labour Rates ─────────────────────────────────────────────────────────────
+
+model LabourRate {
+  id         String   @id @default(cuid())
+  trade      String   // Mason, Electrician, Plumber, Carpenter, Painter, Roofer
+  ratePerDay Float
+  unit       String   @default("day")
+  region     String   @default("national")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── Contractors ──────────────────────────────────────────────────────────────
+
 model Contractor {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  specialty   String   // e.g. "Masonry & Blockwork", "Roofing", "General Contractor"
+  specialty   String
   location    String
   contact     String
-  bio         String   @default("")
-  yearsExp    Int      @default(0)
-  verified    Boolean  @default(false)
+  bio         String    @default("")
+  yearsExp    Int       @default(0)
+  verified    Boolean   @default(false)
   verifiedAt  DateTime?
-  avgRating   Float    @default(0)
-  reviewCount Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  avgRating   Float     @default(0)
+  reviewCount Int       @default(0)
+  lat         Float?
+  lng         Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  userId  String?  @unique
-  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  reviews ContractorReview[]
+  userId   String?  @unique
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reviews  ContractorReview[]
+  projects ContractorProject[]
+  leads    ContractorLead[]
 }
 
 model ContractorReview {
   id          String   @id @default(cuid())
-  rating      Int      // 1-5
+  rating      Int
   comment     String   @default("")
   projectType String   @default("")
   createdAt   DateTime @default(now())
@@ -130,6 +295,136 @@ model ContractorReview {
 
   @@unique([contractorId, userId])
 }
+
+model ContractorProject {
+  id           String     @id @default(cuid())
+  title        String
+  description  String     @default("")
+  photoUrls    String     @default("[]") // JSON array of URL strings
+  location     String     @default("")
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+
+  contractorId String
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model ContractorLead {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  message     String
+  projectType String   @default("")
+  status      String   @default("NEW") // NEW | CONTACTED | CLOSED
+  createdAt   DateTime @default(now())
+
+  contractorId String
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+// ─── Supplier Reviews ─────────────────────────────────────────────────────────
+
+model SupplierReview {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, userId])
+}
+
+// ─── Forum ────────────────────────────────────────────────────────────────────
+
+model ForumThread {
+  id           String   @id @default(cuid())
+  title        String
+  body         String
+  categorySlug String   @default("general") // general | estimating | suppliers | regulations | other
+  pinned       Boolean  @default(false)
+  views        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId  String
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies ForumReply[]
+
+  @@index([categorySlug])
+}
+
+model ForumReply {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+
+  threadId String
+  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Fraud / Notices ──────────────────────────────────────────────────────────
+
+model FraudAlert {
+  id         String   @id @default(cuid())
+  title      String
+  body       String
+  severity   String   @default("WARNING") // INFO | WARNING | CRITICAL
+  active     Boolean  @default(true)
+  adminId    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  materialId String?
+  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+}
+
+// ─── Material Guides ─────────────────────────────────────────────────────────
+
+model MaterialGuide {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   // Markdown
+  category  String   @default("general")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  materialId String?
+  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+}
+
+// ─── Public API Keys ──────────────────────────────────────────────────────────
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique @default(cuid())
+  label     String
+  active    Boolean  @default(true)
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Activity Log ─────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+// ─── Estimates ────────────────────────────────────────────────────────────────
 
 model Estimate {
   id          String   @id @default(cuid())

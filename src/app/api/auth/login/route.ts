@@ -14,12 +14,19 @@ export async function POST(req: NextRequest) {
     const valid = await comparePassword(password, user.password)
     if (!valid) return err('Invalid credentials', 401)
 
+    let contractorId: string | undefined
+    if (user.role === 'CONTRACTOR') {
+      const contractor = await prisma.contractor.findUnique({ where: { userId: user.id } })
+      contractorId = contractor?.id
+    }
+
     await log('LOGIN', user.id)
     const token = signToken({
       id: user.id,
       phone: user.phone,
       role: user.role as any,
       supplierId: user.supplier?.id,
+      contractorId,
     })
 
     return ok({
@@ -30,6 +37,7 @@ export async function POST(req: NextRequest) {
         phone: user.phone,
         role: user.role,
         supplierId: user.supplier?.id,
+        contractorId,
       },
     })
   } catch (e) {

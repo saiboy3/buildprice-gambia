@@ -3,16 +3,24 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/context'
-import { HardHat, LayoutDashboard, Package, Store, Users, ScrollText, LogOut, Hammer } from 'lucide-react'
+import {
+  HardHat, LayoutDashboard, Package, Store, Users, ScrollText, LogOut, Hammer,
+  AlertTriangle, BookOpen, ShieldCheck, Star, Wrench,
+} from 'lucide-react'
 import clsx from 'clsx'
 
 const links = [
-  { href: '/admin',           label: 'Overview',   icon: LayoutDashboard },
-  { href: '/admin/materials', label: 'Materials',  icon: Package },
-  { href: '/admin/suppliers',   label: 'Suppliers',   icon: Store },
-  { href: '/admin/contractors', label: 'Contractors', icon: Hammer },
-  { href: '/admin/users',       label: 'Users',       icon: Users },
-  { href: '/admin/logs',      label: 'Activity',   icon: ScrollText },
+  { href: '/admin',                    label: 'Overview',            icon: LayoutDashboard },
+  { href: '/admin/materials',          label: 'Materials',           icon: Package },
+  { href: '/admin/suppliers',          label: 'Suppliers',           icon: Store },
+  { href: '/admin/contractors',        label: 'Contractors',         icon: Hammer },
+  { href: '/admin/users',              label: 'Users',               icon: Users },
+  { href: '/admin/labour-rates',       label: 'Labour Rates',        icon: Wrench },
+  { href: '/admin/fraud-alerts',       label: 'Fraud Alerts',        icon: AlertTriangle },
+  { href: '/admin/guides',             label: 'Guides',              icon: BookOpen },
+  { href: '/admin/verification',       label: 'Supplier Verification', icon: ShieldCheck },
+  { href: '/admin/promoted-listings',  label: 'Promoted Listings',   icon: Star },
+  { href: '/admin/logs',               label: 'Activity',            icon: ScrollText },
 ]
 
 export default function AdminNav() {
@@ -28,7 +36,7 @@ export default function AdminNav() {
         <p className="text-xs text-gray-500 mt-1">Admin Panel</p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}

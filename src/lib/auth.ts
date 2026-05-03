@@ -7,8 +7,9 @@ const SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me'
 export type JwtPayload = {
   id: string
   phone: string
-  role: 'USER' | 'SUPPLIER' | 'ADMIN'
+  role: 'USER' | 'SUPPLIER' | 'ADMIN' | 'CONTRACTOR'
   supplierId?: string
+  contractorId?: string
 }
 
 export function signToken(payload: JwtPayload): string {

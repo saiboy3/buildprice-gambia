@@ -32,6 +32,24 @@ export async function POST(req: NextRequest) {
     if (!materialId || price === undefined || !unit) return err('materialId, price, and unit required')
     if (price < 0) return err('Price must be non-negative')
 
+    // Check for existing price to log history on update
+    const existingPrice = await prisma.price.findUnique({
+      where: { materialId_supplierId: { materialId, supplierId } },
+    })
+
+    if (existingPrice && existingPrice.price !== price) {
+      await prisma.priceHistory.create({
+        data: {
+          priceId: existingPrice.id,
+          materialId: existingPrice.materialId,
+          supplierId,
+          oldPrice: existingPrice.price,
+          newPrice: price,
+          unit: unit ?? existingPrice.unit,
+        },
+      })
+    }
+
     const record = await prisma.price.upsert({
       where: { materialId_supplierId: { materialId, supplierId } },
       update: { price, unit, stockStatus: stockStatus ?? 'AVAILABLE' },

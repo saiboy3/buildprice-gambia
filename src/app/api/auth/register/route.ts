@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
     if (!name || !phone || !password) return err('name, phone, and password are required')
     if (password.length < 6) return err('Password must be at least 6 characters')
-    if (!['USER', 'SUPPLIER'].includes(role ?? 'USER')) return err('Invalid role')
+    if (!['USER', 'SUPPLIER', 'CONTRACTOR'].includes(role ?? 'USER')) return err('Invalid role')
 
     const existing = await prisma.user.findUnique({ where: { phone } })
     if (existing) return err('Phone number already registered', 409)
@@ -19,9 +19,15 @@ export async function POST(req: NextRequest) {
       data: { name, phone, email, password: hash, role: role ?? 'USER' },
     })
 
+    let contractorId: string | undefined
+    if (user.role === 'CONTRACTOR') {
+      const contractor = await prisma.contractor.findUnique({ where: { userId: user.id } })
+      contractorId = contractor?.id
+    }
+
     await log('REGISTER', user.id, `New ${user.role} registered`)
-    const token = signToken({ id: user.id, phone: user.phone, role: user.role as any })
-    return ok({ token, user: { id: user.id, name: user.name, phone: user.phone, role: user.role } }, 201)
+    const token = signToken({ id: user.id, phone: user.phone, role: user.role as any, contractorId })
+    return ok({ token, user: { id: user.id, name: user.name, phone: user.phone, role: user.role, contractorId } }, 201)
   } catch (e) {
     return handleError(e)
   }

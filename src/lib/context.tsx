@@ -6,8 +6,9 @@ type User = {
   id: string
   name: string
   phone: string
-  role: 'USER' | 'SUPPLIER' | 'ADMIN'
+  role: 'USER' | 'SUPPLIER' | 'ADMIN' | 'CONTRACTOR'
   supplierId?: string
+  contractorId?: string
 }
 
 type AuthCtx = {
@@ -17,12 +18,13 @@ type AuthCtx = {
   logout: () => void
   isAdmin: boolean
   isSupplier: boolean
+  isContractor: boolean
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null, token: null,
   login: () => {}, logout: () => {},
-  isAdmin: false, isSupplier: false,
+  isAdmin: false, isSupplier: false, isContractor: false,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -50,7 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, token, login, logout, isAdmin: user?.role === 'ADMIN', isSupplier: user?.role === 'SUPPLIER' || user?.role === 'ADMIN' }}>
+    <Ctx.Provider value={{
+      user, token, login, logout,
+      isAdmin: user?.role === 'ADMIN',
+      isSupplier: user?.role === 'SUPPLIER' || user?.role === 'ADMIN',
+      isContractor: user?.role === 'CONTRACTOR',
+    }}>
       {children}
     </Ctx.Provider>
   )
