@@ -143,7 +143,11 @@ export default function ContractorsPage() {
                     ? 'bg-primary-600 text-white border-primary-600'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
                 )}>
-                {meta && <span>{meta.emoji}</span>}
+                {meta && (
+                  <div className="w-4 h-4 rounded overflow-hidden shrink-0">
+                    <img src={meta.image} alt={s} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                )}
                 {s}
               </button>
             )
@@ -171,7 +175,7 @@ export default function ContractorsPage() {
             {filtered.map(c => {
               const ini   = initials(c.name)
               const bg    = avatarColor(c.name)
-              const smeta = SPECIALTY_META[c.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', emoji: '🏗️' }
+              const smeta = SPECIALTY_META[c.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=70' }
               return (
                 <Link key={c.id} href={`/contractors/${c.id}`}
                   className="card hover:shadow-md hover:border-primary-200 transition-all group overflow-hidden p-0">
@@ -197,7 +201,10 @@ export default function ContractorsPage() {
                   {/* Body */}
                   <div className="p-4">
                     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${smeta.color} ${smeta.text}`}>
-                      {smeta.emoji} {c.specialty}
+                      <div className="w-4 h-4 rounded overflow-hidden shrink-0">
+                        <img src={smeta.image} alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                      {c.specialty}
                     </span>
                     <p className="text-sm text-gray-500 line-clamp-2 mb-3">
                       {c.bio || 'No bio provided.'}

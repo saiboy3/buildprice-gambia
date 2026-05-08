@@ -4,7 +4,7 @@ import SearchBar from '@/components/SearchBar'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import Link from 'next/link'
 import Image from 'next/image'
-import { TrendingDown, Zap, MessageSquare, ShieldCheck, HardHat, ArrowRight, ArrowDown } from 'lucide-react'
+import { TrendingDown, Zap, MessageSquare, ShieldCheck, HardHat, ArrowRight, ArrowDown, BarChart3, Store, Package } from 'lucide-react'
 import { CATEGORY_META } from '@/lib/visual'
 import { faqJsonLd, breadcrumbJsonLd } from '@/lib/seo'
 
@@ -129,14 +129,14 @@ export default async function HomePage() {
             {/* Right panel — animated stat cards */}
             <div className="hidden md:grid grid-cols-2 gap-3">
               {[
-                { value: stats.prices,      label: 'Listed Prices',        icon: '📊' },
-                { value: stats.suppliers,   label: 'Verified Suppliers',   icon: '🏪' },
-                { value: stats.contractors, label: 'Verified Contractors', icon: '👷' },
-                { value: stats.materials,   label: 'Material Types',       icon: '📦' },
+                { value: stats.prices,      label: 'Listed Prices',        icon: <BarChart3 size={20} className="text-primary-300" /> },
+                { value: stats.suppliers,   label: 'Verified Suppliers',   icon: <Store size={20} className="text-primary-300" /> },
+                { value: stats.contractors, label: 'Verified Contractors', icon: <HardHat size={20} className="text-primary-300" /> },
+                { value: stats.materials,   label: 'Material Types',       icon: <Package size={20} className="text-primary-300" /> },
               ].map(s => (
                 <div key={s.label}
                   className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-white text-center animate-float">
-                  <div className="text-2xl mb-1">{s.icon}</div>
+                  <div className="flex justify-center mb-1">{s.icon}</div>
                   <div className="text-3xl font-extrabold">
                     <AnimatedCounter end={s.value} />
                   </div>
@@ -194,7 +194,14 @@ export default async function HomePage() {
             {CATEGORY_META.map(cat => (
               <Link key={cat.label} href={`/search?q=${encodeURIComponent(cat.query)}`}
                 className={`card-lift group flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border ${cat.color} ${cat.border} text-center cursor-pointer`}>
-                <span className="text-3xl group-hover:scale-110 transition-transform duration-200">{cat.emoji}</span>
+                <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform duration-200 shadow-sm">
+                  <img
+                    src={cat.image}
+                    alt={cat.label}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
                 <span className={`text-xs font-semibold leading-tight ${cat.text}`}>{cat.label}</span>
               </Link>
             ))}
@@ -246,7 +253,9 @@ export default async function HomePage() {
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl">{cm.emoji}</span>
+                        <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-sm">
+                          <img src={cm.image} alt={cm.label} className="w-full h-full object-cover" loading="lazy" />
+                        </div>
                         <div>
                           <p className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors text-sm">
                             {price.material.name}

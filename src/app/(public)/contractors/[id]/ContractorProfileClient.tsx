@@ -130,7 +130,7 @@ export default function ContractorProfileClient() {
 
   const bg    = avatarColor(contractor.name)
   const ini   = initials(contractor.name)
-  const smeta = SPECIALTY_META[contractor.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', emoji: '🏗️' }
+  const smeta = SPECIALTY_META[contractor.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=70' }
 
   return (
     <div>
@@ -170,7 +170,10 @@ export default function ContractorProfileClient() {
                   )}
                 </div>
                 <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${smeta.color} ${smeta.text}`}>
-                  {smeta.emoji} {contractor.specialty}
+                  <div className="w-4 h-4 rounded overflow-hidden shrink-0">
+                    <img src={smeta.image} alt={contractor.specialty} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  {contractor.specialty}
                 </span>
               </div>
             </div>
