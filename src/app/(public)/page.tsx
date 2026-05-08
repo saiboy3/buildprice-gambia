@@ -4,9 +4,12 @@ import SearchBar from '@/components/SearchBar'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import Link from 'next/link'
 import Image from 'next/image'
-import { TrendingDown, Zap, MessageSquare, ShieldCheck, HardHat, ArrowRight, ArrowDown, BarChart3, Store, Package } from 'lucide-react'
-import { CATEGORY_META } from '@/lib/visual'
+import { ShieldCheck, HardHat, ArrowRight, ArrowDown, BarChart3, Store, Package } from 'lucide-react'
 import { faqJsonLd, breadcrumbJsonLd } from '@/lib/seo'
+import HomeContent from '@/components/HomeContent'
+import HomeCTASection from '@/components/HomeCTASection'
+import HomeLatestHeading from '@/components/HomeLatestHeading'
+import { CATEGORY_META } from '@/lib/visual'
 
 export const metadata: Metadata = {
   title: 'BuildPriceGambia – Construction Material Prices in The Gambia',
@@ -182,62 +185,13 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Browse by category ───────────────────────────────────────────── */}
-        <section className="max-w-6xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Browse by Category</h2>
-            <Link href="/search" className="text-sm text-primary-600 hover:underline font-medium flex items-center gap-1">
-              All materials <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {CATEGORY_META.map(cat => (
-              <Link key={cat.label} href={`/search?q=${encodeURIComponent(cat.query)}`}
-                className={`card-lift group flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border ${cat.color} ${cat.border} text-center cursor-pointer`}>
-                <div className="w-12 h-12 rounded-xl overflow-hidden group-hover:scale-110 transition-transform duration-200 shadow-sm">
-                  <img
-                    src={cat.image}
-                    alt={cat.label}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-                <span className={`text-xs font-semibold leading-tight ${cat.text}`}>{cat.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Why BuildPriceGambia ─────────────────────────────────────────── */}
-        <section className="bg-gradient-to-b from-white to-amber-50/30 border-y border-gray-100">
-          <div className="max-w-5xl mx-auto px-4 py-14 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { icon: TrendingDown,  title: 'Compare Prices',    desc: "Every supplier's price side by side. Pick the best deal instantly." },
-              { icon: Zap,           title: 'Live Results',       desc: 'Prices updated by suppliers in real time — always current.' },
-              { icon: MessageSquare, title: 'WhatsApp Bot',       desc: 'Message us on WhatsApp. Get prices without opening a browser.' },
-              { icon: ShieldCheck,   title: 'Verified Suppliers', desc: 'Every listed supplier is reviewed and verified before going live.' },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="card border-l-4 border-l-primary-400 flex flex-col gap-3 group">
-                <div className="p-3 bg-primary-50 rounded-xl w-fit group-hover:rotate-6 transition-transform">
-                  <Icon size={22} className="text-primary-600" />
-                </div>
-                <h3 className="font-bold text-gray-900">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* ── Browse by category + Why section (client, translatable) ─────── */}
+        <HomeContent />
 
         {/* ── Latest prices ───────────────────────────────────────────────── */}
         <section className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              Latest Prices
-              <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                LIVE
-              </span>
-            </h2>
+            <HomeLatestHeading />
             <Link href="/search" className="text-sm text-primary-600 hover:underline font-medium flex items-center gap-1">
               View all <ArrowRight size={14} />
             </Link>
@@ -280,19 +234,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Price Comparison CTA banner ──────────────────────────────────── */}
-        <section className="max-w-6xl mx-auto px-4 mb-8">
-          <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-3xl p-8 text-white overflow-hidden relative">
-            <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative z-10">
-              <h2 className="text-2xl font-bold mb-2">Compare Prices Instantly</h2>
-              <p className="text-primary-100 mb-4">Search across all suppliers and find the best deals in seconds.</p>
-              <Link href="/search" className="bg-white text-primary-700 font-bold px-6 py-3 rounded-xl hover:bg-primary-50 transition-colors inline-flex items-center gap-2">
-                Start comparing <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* ── Price Comparison CTA banner (client, translatable) ───────────── */}
+        <HomeCTASection />
 
         {/* ── Contractors CTA ─────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-gray-900 py-12 px-4">

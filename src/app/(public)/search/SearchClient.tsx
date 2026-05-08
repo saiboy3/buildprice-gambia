@@ -8,6 +8,7 @@ import PriceCard from '@/components/PriceCard'
 import CompareTable from '@/components/CompareTable'
 import { SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import clsx from 'clsx'
+import { useT } from '@/lib/LanguageContext'
 
 type Price = {
   id: string
@@ -22,6 +23,7 @@ type Price = {
 const LOCATIONS = ['Banjul', 'Serrekunda', 'Bakau', 'Brikama', 'Farafenni', 'Basse']
 
 export default function SearchClient() {
+  const tr = useT()
   const params   = useSearchParams()
   const q        = params.get('q') ?? ''
   const locParam = params.get('location') ?? ''
@@ -73,7 +75,7 @@ export default function SearchClient() {
           {q
             ? loading
               ? 'Searching…'
-              : `${prices.length} result${prices.length !== 1 ? 's' : ''} for "${q}"`
+              : `${prices.length} ${tr('search.results')} for "${q}"`
             : 'Enter a material to search'}
         </p>
         <div className="flex items-center gap-2">
@@ -143,9 +145,9 @@ export default function SearchClient() {
       {q && !loading && prices.length === 0 && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-lg font-semibold text-gray-700">No results found</h3>
-          <p className="text-gray-400 mt-1">Try a different search term or browse by category</p>
-          <Link href="/" className="btn-primary mt-4 inline-flex">Browse categories</Link>
+          <h3 className="text-lg font-semibold text-gray-700">{tr('search.empty.title')}</h3>
+          <p className="text-gray-400 mt-1">{tr('search.empty.desc')}</p>
+          <Link href="/" className="btn-primary mt-4 inline-flex">{tr('search.empty.btn')}</Link>
         </div>
       )}
 

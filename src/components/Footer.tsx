@@ -1,9 +1,14 @@
+'use client'
 import Link from 'next/link'
 import { HardHat, Phone, Mail, MapPin } from 'lucide-react'
+import { useT, useLang } from '@/lib/LanguageContext'
 
 export default function Footer() {
+  const tr = useT()
+  const { locale } = useLang()
+  const isRTL = locale === 'ar'
   return (
-    <footer className="bg-gray-900 text-gray-400 mt-16">
+    <footer className="bg-gray-900 text-gray-400 mt-16" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="col-span-1 md:col-span-2">
@@ -12,8 +17,7 @@ export default function Footer() {
             <span className="text-white font-bold text-lg">BuildPrice<span className="text-primary-400">Gambia</span></span>
           </div>
           <p className="text-sm leading-relaxed max-w-xs">
-            The Gambia&apos;s first real-time construction material price comparison platform.
-            Helping builders, contractors, and developers make smarter purchasing decisions.
+            {tr('footer.tagline')}
           </p>
           <div className="flex gap-3 mt-4">
             {/* WhatsApp */}
@@ -28,7 +32,7 @@ export default function Footer() {
 
         {/* Platform links */}
         <div>
-          <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">Platform</h3>
+          <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">{tr('footer.platform')}</h3>
           <ul className="space-y-2 text-sm">
             {[
               ['Search Prices',  '/search'],
@@ -44,7 +48,7 @@ export default function Footer() {
 
         {/* Resources links */}
         <div>
-          <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">Resources</h3>
+          <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">{tr('footer.resources')}</h3>
           <ul className="space-y-2 text-sm">
             {[
               ['Construction Guides', '/guides'],
@@ -64,7 +68,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-800 py-4 text-center text-xs text-gray-600">
-        © {new Date().getFullYear()} BuildPriceGambia. All rights reserved. Prices in Gambian Dalasi (GMD).
+        © {new Date().getFullYear()} BuildPriceGambia. {tr('footer.copy')}
       </div>
     </footer>
   )

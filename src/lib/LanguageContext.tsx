@@ -11,3 +11,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export function useLang() { return useContext(LangContext) }
+
+import { t } from './i18n'
+export function useT() {
+  const { locale } = useLang()
+  return (key: string, fallback?: string) => t(locale, key) || fallback || key
+}

@@ -10,23 +10,26 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import LanguageToggle from '@/components/LanguageToggle'
-
-const mainLinks = [
-  { href: '/search',      label: 'Prices' },
-  { href: '/suppliers',   label: 'Suppliers' },
-  { href: '/estimator',   label: 'Estimator' },
-  { href: '/contractors', label: 'Contractors' },
-  { href: '/map',         label: 'Map',        icon: Map },
-  { href: '/forum',       label: 'Forum',      icon: MessageSquare },
-  { href: '/guides',      label: 'Guides',     icon: BookOpen },
-  { href: '/rfq',         label: 'Get Quotes', icon: FileText },
-]
+import { useT, useLang } from '@/lib/LanguageContext'
 
 export default function Navbar() {
   const { user, logout, isAdmin, isSupplier, isContractor } = useAuth()
   const pathname = usePathname()
   const [open,           setOpen]           = useState(false)
   const [supplierDdOpen, setSupplierDdOpen] = useState(false)
+  const tr = useT()
+  const { locale } = useLang()
+
+  const mainLinks = [
+    { href: '/search',      label: tr('nav.prices') },
+    { href: '/suppliers',   label: tr('nav.suppliers') },
+    { href: '/estimator',   label: tr('nav.estimator') },
+    { href: '/contractors', label: tr('nav.contractors') },
+    { href: '/map',         label: tr('nav.map'),        icon: Map },
+    { href: '/forum',       label: tr('nav.forum'),      icon: MessageSquare },
+    { href: '/guides',      label: tr('nav.guides'),     icon: BookOpen },
+    { href: '/rfq',         label: tr('nav.getQuotes'),  icon: FileText },
+  ]
 
   const linkClass = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
@@ -34,7 +37,7 @@ export default function Navbar() {
       : 'relative text-gray-600 hover:text-primary-600 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary-500 after:transition-all hover:after:w-full'
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-white/20 shadow-sm">
+    <nav className="sticky top-0 z-50 glass border-b border-white/20 shadow-sm" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary-600 shrink-0">
