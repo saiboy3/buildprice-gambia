@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import SearchBar from '@/components/SearchBar'
 import PriceCard from '@/components/PriceCard'
 import CompareTable from '@/components/CompareTable'
@@ -117,6 +118,19 @@ export default function SearchClient() {
         </div>
       )}
 
+      {/* Skeleton loading */}
+      {loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="card">
+              <div className="skeleton h-4 w-1/3 rounded mb-2" />
+              <div className="skeleton h-6 w-3/4 rounded mb-3" />
+              <div className="skeleton h-8 w-1/2 rounded" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
       {!q && (
         <div className="text-center py-16 text-gray-400">
@@ -127,10 +141,11 @@ export default function SearchClient() {
       )}
 
       {q && !loading && prices.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-4xl mb-3">📦</p>
-          <p className="font-medium text-gray-600 mb-1">No results for "{q}"</p>
-          <p className="text-sm">Try a different search term or clear your filters</p>
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4">🔍</div>
+          <h3 className="text-lg font-semibold text-gray-700">No results found</h3>
+          <p className="text-gray-400 mt-1">Try a different search term or browse by category</p>
+          <Link href="/" className="btn-primary mt-4 inline-flex">Browse categories</Link>
         </div>
       )}
 

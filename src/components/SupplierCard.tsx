@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MapPin, Phone, ShieldCheck, Package } from 'lucide-react'
+import { MapPin, Phone, ShieldCheck, Package, Star, ArrowRight } from 'lucide-react'
 import { avatarColor, initials } from '@/lib/visual'
 
 type Supplier = {
@@ -9,7 +9,20 @@ type Supplier = {
   contact: string
   verified: boolean
   views: number
+  avgRating?: number
+  reviewCount?: number
   prices: { price: number; unit: string; material: { name: string } }[]
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(n => (
+        <Star key={n} size={11}
+          className={rating >= n ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
+      ))}
+    </span>
+  )
 }
 
 export default function SupplierCard({ supplier }: { supplier: Supplier }) {
@@ -18,7 +31,7 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
 
   return (
     <Link href={`/suppliers/${supplier.id}`}
-      className="card block hover:shadow-md hover:border-primary-200 transition-all group overflow-hidden p-0">
+      className="card block group overflow-hidden p-0 relative">
 
       {/* Coloured header strip with avatar */}
       <div className={`${bg} px-4 py-3 flex items-center justify-between`}>
@@ -45,9 +58,20 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
 
       {/* Body */}
       <div className="p-4">
-        <span className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
+        <span className="flex items-center gap-1.5 text-sm text-gray-600 mb-2">
           <Phone size={13} className="text-gray-400 shrink-0" /> {supplier.contact}
         </span>
+
+        {/* Rating */}
+        {supplier.avgRating != null && supplier.avgRating > 0 && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <RatingStars rating={supplier.avgRating} />
+            <span className="text-xs font-semibold text-gray-700">{supplier.avgRating.toFixed(1)}</span>
+            {supplier.reviewCount != null && (
+              <span className="text-xs text-gray-400">({supplier.reviewCount})</span>
+            )}
+          </div>
+        )}
 
         {supplier.prices.length > 0 && (
           <div>
@@ -66,6 +90,11 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Hover reveal CTA */}
+      <div className="absolute bottom-0 left-0 right-0 bg-primary-500 text-white text-xs font-semibold flex items-center justify-center gap-1 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+        View Profile <ArrowRight size={12} />
       </div>
     </Link>
   )

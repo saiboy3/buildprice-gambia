@@ -1,269 +1,104 @@
-'use client'
+import type { Metadata } from 'next'
+import PriceHistoryClient from './PriceHistoryClient'
+import { productJsonLd, breadcrumbJsonLd } from '@/lib/seo'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer,
-} from 'recharts'
-import { ChevronLeft, TrendingUp, Loader2, Package } from 'lucide-react'
+const BASE_URL = 'https://buildprice-gambia.vercel.app'
 
-const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f97316']
-
-type HistoryEntry = {
-  date: string
-  [supplierName: string]: number | string
-}
-
-type CurrentPrice = {
-  id: string
-  price: number
-  unit: string
-  stockStatus: string
-  updatedAt: string
-  supplier: { id: string; name: string; location: string }
-}
-
-type MaterialInfo = {
+interface MaterialApiData {
   id: string
   name: string
   category: { name: string }
 }
 
-// Shape returned by /api/prices/history
-type GroupedHistory = Record<string, {
+interface PriceApiData {
+  id: string
+  price: number
+  unit: string
+  stockStatus: string
   supplier: { id: string; name: string; location: string }
-  history: Array<{ newPrice: number; changedAt: string; unit: string }>
-}>
+}
 
-export default function PriceHistoryPage() {
-  const { materialId } = useParams<{ materialId: string }>()
+async function fetchMaterial(materialId: string): Promise<MaterialApiData | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/materials`, { next: { revalidate: 3600 } })
+    const json = await res.json()
+    if (!json.ok) return null
+    return (json.data as MaterialApiData[]).find((m) => m.id === materialId) ?? null
+  } catch {
+    return null
+  }
+}
 
-  const [material,      setMaterial]      = useState<MaterialInfo | null>(null)
-  const [historyData,   setHistoryData]   = useState<HistoryEntry[]>([])
-  const [currentPrices, setCurrentPrices] = useState<CurrentPrice[]>([])
-  const [suppliers,     setSuppliers]     = useState<string[]>([])
-  const [loading,       setLoading]       = useState(true)
-  const [error,         setError]         = useState('')
+async function fetchPrices(materialId: string): Promise<PriceApiData[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/prices?material_id=${materialId}`, {
+      next: { revalidate: 3600 },
+    })
+    const json = await res.json()
+    return json.ok ? (json.data as PriceApiData[]) : []
+  } catch {
+    return []
+  }
+}
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      setError('')
-      try {
-        const [matsRes, histRes, curRes] = await Promise.all([
-          fetch('/api/materials'),
-          fetch(`/api/prices/history?materialId=${materialId}`),
-          fetch(`/api/prices?material_id=${materialId}`),
-        ])
-        const [matsJson, histJson, curJson] = await Promise.all([
-          matsRes.json(),
-          histRes.json(),
-          curRes.json(),
-        ])
+export async function generateMetadata({
+  params,
+}: {
+  params: { materialId: string }
+}): Promise<Metadata> {
+  const m = await fetchMaterial(params.materialId)
+  if (!m) {
+    return { title: 'Material Prices' }
+  }
+  const description = `Compare ${m.name} prices across suppliers in The Gambia. View price history, current listings and find the best deal in GMD.`
 
-        // ── Material info ─────────────────────────────────────────────────
-        if (matsJson.ok) {
-          const found = (matsJson.data as MaterialInfo[]).find(m => m.id === materialId)
-          setMaterial(found ?? null)
-        }
+  return {
+    title: `${m.name} Prices`,
+    description,
+    openGraph: {
+      title: `${m.name} Prices in The Gambia | BuildPriceGambia`,
+      description,
+      url: `${BASE_URL}/prices/${m.id}`,
+    },
+    alternates: {
+      canonical: `${BASE_URL}/prices/${m.id}`,
+    },
+  }
+}
 
-        // ── Current prices ────────────────────────────────────────────────
-        if (curJson.ok) {
-          setCurrentPrices(curJson.data as CurrentPrice[])
-        }
+export default async function PricePage({ params }: { params: { materialId: string } }) {
+  const [material, prices] = await Promise.all([
+    fetchMaterial(params.materialId),
+    fetchPrices(params.materialId),
+  ])
 
-        // ── Price history ─────────────────────────────────────────────────
-        if (histJson.ok) {
-          // API returns: Record<supplierId, { supplier, history[] }>
-          const grouped = histJson.data as GroupedHistory
-          const supplierEntries = Object.values(grouped)
-
-          if (supplierEntries.length === 0) {
-            setHistoryData([])
-            setSuppliers([])
-          } else {
-            const supplierNames = supplierEntries.map(e => e.supplier.name)
-            setSuppliers(supplierNames)
-
-            // Build chart rows keyed by date
-            const byDate: Record<string, HistoryEntry> = {}
-
-            supplierEntries.forEach(({ supplier, history }) => {
-              history.forEach(h => {
-                const d = new Date(h.changedAt).toISOString().slice(0, 10)
-                if (!byDate[d]) byDate[d] = { date: d }
-                byDate[d][supplier.name] = h.newPrice
-              })
-            })
-
-            setHistoryData(
-              Object.values(byDate).sort((a, b) => String(a.date).localeCompare(String(b.date)))
-            )
-          }
-        }
-      } catch {
-        setError('Failed to load price data. Please try again.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [materialId])
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <Loader2 size={28} className="animate-spin text-primary-500" />
-    </div>
-  )
-
-  const lowestPrice = currentPrices.length
-    ? Math.min(...currentPrices.map(p => p.price))
+  const productLd = material
+    ? productJsonLd(material, prices.map((p) => ({
+        price: p.price,
+        unit: p.unit,
+        supplier: { name: p.supplier.name, location: p.supplier.location },
+      })))
     : null
 
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: 'Home', url: '/' },
+    { name: 'Search', url: '/search' },
+    { name: material ? `${material.name} Prices` : 'Material Prices', url: `/prices/${params.materialId}` },
+  ])
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link href="/search" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-        <ChevronLeft size={16} /> Back to search
-      </Link>
-
-      <div className="flex items-start gap-3 mb-6">
-        <Package size={28} className="text-primary-500 shrink-0 mt-1" />
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">
-            {material?.name ?? 'Price History'}
-          </h1>
-          {material?.category && (
-            <p className="text-sm text-gray-400 mt-0.5">{material.category.name}</p>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm">
-          {error}
-        </div>
+    <>
+      {productLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }}
+        />
       )}
-
-      {/* Price history chart */}
-      <div className="card mb-6 p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp size={16} className="text-primary-500" />
-          <h2 className="font-bold text-gray-900">Price Trend (last 90 days)</h2>
-        </div>
-
-        {historyData.length === 0 ? (
-          <p className="text-gray-400 text-center py-12 text-sm">
-            No historical price changes recorded yet.
-            Prices will appear here as suppliers update their listings.
-          </p>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={historyData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11 }}
-                tickFormatter={d => {
-                  const dt = new Date(d)
-                  return `${dt.getDate()}/${dt.getMonth() + 1}`
-                }}
-              />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                tickFormatter={v => `D${Number(v).toLocaleString()}`}
-              />
-              <Tooltip
-                formatter={(value) => [`D${Number(value ?? 0).toLocaleString()}`, '']}
-                labelFormatter={label => `Date: ${label}`}
-              />
-              <Legend />
-              {suppliers.map((s, i) => (
-                <Line
-                  key={s}
-                  type="monotone"
-                  dataKey={s}
-                  stroke={COLORS[i % COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* Current prices table */}
-      <div className="card">
-        <h2 className="font-bold text-gray-900 mb-4">
-          Current Prices
-          {currentPrices.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-400">
-              {currentPrices.length} supplier{currentPrices.length !== 1 ? 's' : ''}
-            </span>
-          )}
-        </h2>
-
-        {currentPrices.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-8">No current prices listed.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
-                <tr>
-                  <th className="text-left px-4 py-2.5">Supplier</th>
-                  <th className="text-left px-4 py-2.5">Location</th>
-                  <th className="text-right px-4 py-2.5">Price</th>
-                  <th className="text-center px-4 py-2.5">Stock</th>
-                  <th className="text-left px-4 py-2.5">Updated</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {[...currentPrices].sort((a, b) => a.price - b.price).map(p => (
-                  <tr
-                    key={p.id}
-                    className={p.price === lowestPrice ? 'bg-green-50' : 'hover:bg-gray-50'}
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/suppliers/${p.supplier.id}`}
-                        className="font-medium text-gray-900 hover:text-primary-600"
-                      >
-                        {p.supplier.name}
-                      </Link>
-                      {p.price === lowestPrice && (
-                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
-                          Lowest
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{p.supplier.location}</td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900">
-                      D{p.price.toLocaleString()}
-                      <span className="text-xs font-normal text-gray-400 ml-1">/{p.unit}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        p.stockStatus === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
-                        p.stockStatus === 'LIMITED'   ? 'bg-yellow-100 text-yellow-700' :
-                                                        'bg-red-100 text-red-700'
-                      }`}>
-                        {p.stockStatus === 'AVAILABLE' ? 'In stock'
-                          : p.stockStatus === 'LIMITED' ? 'Limited' : 'Out of stock'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
-                      {new Date(p.updatedAt).toLocaleDateString('en-GB')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+      <PriceHistoryClient />
+    </>
   )
 }

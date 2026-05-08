@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { prisma } from '@/lib/db'
 import SupplierCard from '@/components/SupplierCard'
 import Image from 'next/image'
@@ -5,6 +6,17 @@ import Link from 'next/link'
 import { MapPin } from 'lucide-react'
 
 export const revalidate = 60
+
+export const metadata: Metadata = {
+  title: 'Verified Suppliers',
+  description:
+    'Browse verified construction material suppliers across The Gambia. Find trusted hardware stores and building material suppliers in Banjul, Serrekunda, Brikama and more.',
+  openGraph: {
+    title: 'Verified Construction Material Suppliers in The Gambia',
+    description:
+      'Find trusted hardware stores and building material suppliers across The Gambia.',
+  },
+}
 
 export default async function SuppliersPage() {
   const suppliers = await prisma.supplier.findMany({

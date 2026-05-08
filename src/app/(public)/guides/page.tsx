@@ -1,5 +1,17 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BookOpen, ExternalLink } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'Construction Guides',
+  description:
+    'Practical construction guides for building in The Gambia. Learn about building materials, construction techniques, cost estimation and best practices for Gambian conditions.',
+  openGraph: {
+    title: 'Construction Guides for The Gambia',
+    description:
+      'Practical guides on building materials, construction techniques and best practices for building in The Gambia.',
+  },
+}
 
 type Guide = {
   id: string; slug: string; title: string; category: string

@@ -1,0 +1,10 @@
+# BuildPriceGambia
+> Real-time construction material prices in The Gambia (GMD). Compare supplier prices, find contractors, track price history.
+
+## Key pages
+- /search - Search and compare material prices
+- /suppliers - Browse verified suppliers
+- /contractors - Find contractors by specialty
+- /map - Map of suppliers and contractors
+- /guides - Construction guides for The Gambia
+- /estimator - Project cost estimator
