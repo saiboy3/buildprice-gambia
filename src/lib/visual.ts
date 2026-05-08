@@ -33,23 +33,23 @@ export type CategoryMeta = {
 }
 
 export const CATEGORY_META: CategoryMeta[] = [
-  { label: 'Cement & Concrete', color: 'bg-slate-100',   text: 'text-slate-700',  border: 'border-slate-200',  image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=120&h=120&fit=crop&q=70', query: 'cement' },
-  { label: 'Steel & Metal',     color: 'bg-gray-100',    text: 'text-gray-700',   border: 'border-gray-200',   image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=120&h=120&fit=crop&q=70', query: 'rebar' },
-  { label: 'Sand & Aggregate',  color: 'bg-amber-50',    text: 'text-amber-800',  border: 'border-amber-200',  image: 'https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=120&h=120&fit=crop&q=70', query: 'sand' },
-  { label: 'Timber & Wood',     color: 'bg-orange-50',   text: 'text-orange-800', border: 'border-orange-200', image: 'https://images.unsplash.com/photo-1542621334-a254cf47733d?w=120&h=120&fit=crop&q=70', query: 'timber' },
-  { label: 'Roofing',           color: 'bg-sky-50',      text: 'text-sky-800',    border: 'border-sky-200',    image: 'https://images.unsplash.com/photo-1605152276897-4f618f831968?w=120&h=120&fit=crop&q=70', query: 'zinc' },
-  { label: 'Plumbing',          color: 'bg-blue-50',     text: 'text-blue-800',   border: 'border-blue-200',   image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=120&h=120&fit=crop&q=70', query: 'pipe' },
-  { label: 'Electrical',        color: 'bg-yellow-50',   text: 'text-yellow-800', border: 'border-yellow-200', image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=120&h=120&fit=crop&q=70', query: 'wire' },
-  { label: 'Paint & Finishing', color: 'bg-purple-50',   text: 'text-purple-800', border: 'border-purple-200', image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=120&h=120&fit=crop&q=70', query: 'paint' },
+  { label: 'Cement & Concrete', color: 'bg-slate-100',   text: 'text-slate-700',  border: 'border-slate-200',  image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=120&h=120&fit=crop&q=80', query: 'cement' },
+  { label: 'Steel & Metal',     color: 'bg-gray-100',    text: 'text-gray-700',   border: 'border-gray-200',   image: 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=120&h=120&fit=crop&q=80', query: 'rebar' },
+  { label: 'Sand & Aggregate',  color: 'bg-amber-50',    text: 'text-amber-800',  border: 'border-amber-200',  image: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=120&h=120&fit=crop&q=80', query: 'sand' },
+  { label: 'Timber & Wood',     color: 'bg-orange-50',   text: 'text-orange-800', border: 'border-orange-200', image: 'https://images.unsplash.com/photo-1542621334-a254cf47733d?w=120&h=120&fit=crop&q=80', query: 'timber' },
+  { label: 'Roofing',           color: 'bg-sky-50',      text: 'text-sky-800',    border: 'border-sky-200',    image: 'https://images.unsplash.com/photo-1632759145351-1d593f8f4875?w=120&h=120&fit=crop&q=80', query: 'zinc' },
+  { label: 'Plumbing',          color: 'bg-blue-50',     text: 'text-blue-800',   border: 'border-blue-200',   image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=120&h=120&fit=crop&q=80', query: 'pipe' },
+  { label: 'Electrical',        color: 'bg-yellow-50',   text: 'text-yellow-800', border: 'border-yellow-200', image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=120&h=120&fit=crop&q=80', query: 'wire' },
+  { label: 'Paint & Finishing', color: 'bg-purple-50',   text: 'text-purple-800', border: 'border-purple-200', image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=120&h=120&fit=crop&q=80', query: 'paint' },
 ]
 
 export const SPECIALTY_META: Record<string, { color: string; text: string; image: string }> = {
-  'General Contractor':    { color: 'bg-primary-50',  text: 'text-primary-700',  image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=70' },
-  'Masonry & Blockwork':   { color: 'bg-slate-100',   text: 'text-slate-700',    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80&h=80&fit=crop&q=70' },
-  'Roofing':               { color: 'bg-sky-50',      text: 'text-sky-700',      image: 'https://images.unsplash.com/photo-1605152276897-4f618f831968?w=80&h=80&fit=crop&q=70' },
-  'Plumbing':              { color: 'bg-blue-50',     text: 'text-blue-700',     image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=80&h=80&fit=crop&q=70' },
-  'Electrical':            { color: 'bg-yellow-50',   text: 'text-yellow-700',   image: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=80&h=80&fit=crop&q=70' },
-  'Carpentry & Joinery':   { color: 'bg-orange-50',   text: 'text-orange-700',   image: 'https://images.unsplash.com/photo-1542621334-a254cf47733d?w=80&h=80&fit=crop&q=70' },
-  'Tiling & Finishing':    { color: 'bg-rose-50',     text: 'text-rose-700',     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&h=80&fit=crop&q=70' },
-  'Painting':              { color: 'bg-purple-50',   text: 'text-purple-700',   image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=80&h=80&fit=crop&q=70' },
+  'General Contractor':    { color: 'bg-primary-50',  text: 'text-primary-700',  image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=80' },
+  'Masonry & Blockwork':   { color: 'bg-slate-100',   text: 'text-slate-700',    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80&h=80&fit=crop&q=80' },
+  'Roofing':               { color: 'bg-sky-50',      text: 'text-sky-700',      image: 'https://images.unsplash.com/photo-1632759145351-1d593f8f4875?w=80&h=80&fit=crop&q=80' },
+  'Plumbing':              { color: 'bg-blue-50',     text: 'text-blue-700',     image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=80&h=80&fit=crop&q=80' },
+  'Electrical':            { color: 'bg-yellow-50',   text: 'text-yellow-700',   image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=80&h=80&fit=crop&q=80' },
+  'Carpentry & Joinery':   { color: 'bg-orange-50',   text: 'text-orange-700',   image: 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=80&h=80&fit=crop&q=80' },
+  'Tiling & Finishing':    { color: 'bg-rose-50',     text: 'text-rose-700',     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=80&h=80&fit=crop&q=80' },
+  'Painting':              { color: 'bg-purple-50',   text: 'text-purple-700',   image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=80&h=80&fit=crop&q=80' },
 }
