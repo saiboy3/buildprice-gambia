@@ -21,6 +21,7 @@ const links = [
   { href: '/admin/verification',       label: 'Supplier Verification', icon: ShieldCheck },
   { href: '/admin/promoted-listings',  label: 'Promoted Listings',   icon: Star },
   { href: '/admin/logs',               label: 'Activity',            icon: ScrollText },
+  { href: '/test',                     label: '🧪 Test Guide',       icon: ShieldCheck },
 ]
 
 export default function AdminNav() {

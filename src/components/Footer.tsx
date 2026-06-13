@@ -56,6 +56,7 @@ export default function Footer() {
               ['Get Quotes',         '/rfq'],
               ['Finance',            '/finance'],
               ['Fraud Alerts',       '/fraud-alerts'],
+              ['🧪 Testing Guide',   '/test'],
             ].map(([label, href]) => (
               <li key={href}><Link href={href} className="hover:text-primary-400 transition-colors">{label}</Link></li>
             ))}

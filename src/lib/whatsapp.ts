@@ -47,7 +47,7 @@ async function quickEstimate(sizeM2: number): Promise<string> {
     `Current market prices:\n` +
     `• Cement: ${cementCost}\n` +
     `• Blocks: ${blockCost}\n\n` +
-    `📊 For detailed BOQ visit:\nbuildpricegambia.com/estimator\n\n` +
+    `📊 For detailed BOQ visit:\nbuildprice-gambia.vercel.app/estimator\n\n` +
     `_Prices based on current listings_`
   )
 }
@@ -93,7 +93,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
     const lines = suppliers.map(s => `• *${s.name}* — ${s.location}\n  📞 ${s.contact}`)
     return (
       `🏪 *Verified Suppliers (top 5)*\n\n${lines.join('\n\n')}\n\n` +
-      `Full list: buildpricegambia.com/suppliers`
+      `Full list: buildprice-gambia.vercel.app/suppliers`
     )
   }
 
@@ -106,14 +106,14 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       orderBy: { avgRating: 'desc' },
     })
     if (contractors.length === 0) {
-      return `No verified contractors listed yet. Visit buildpricegambia.com/contractors to register.`
+      return `No verified contractors listed yet. Visit buildprice-gambia.vercel.app/contractors to register.`
     }
     const lines = contractors.map(c =>
       `• *${c.name}* (${c.specialty}) — ${c.location}\n  ⭐ ${c.avgRating > 0 ? c.avgRating.toFixed(1) : 'No reviews'} | 📞 ${c.contact}`
     )
     return (
       `👷 *Top Verified Contractors*\n\n${lines.join('\n\n')}\n\n` +
-      `Full directory: buildpricegambia.com/contractors\n\n` +
+      `Full directory: buildprice-gambia.vercel.app/contractors\n\n` +
       `Reply: *contractor [specialty]* for filtered results\nExample: *contractor mason*`
     )
   }
@@ -128,7 +128,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       `• 2-bedroom: ~70–100 m²\n` +
       `• 3-bedroom: ~110–150 m²\n` +
       `• 4-bedroom: ~160–220 m²\n\n` +
-      `For detailed BOQ: buildpricegambia.com/estimator`
+      `For detailed BOQ: buildprice-gambia.vercel.app/estimator`
     )
   }
 
@@ -137,7 +137,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
     return (
       `🔔 *Price Alerts*\n\n` +
       `Set an alert:\n*alert [material] [price]*\n\nExamples:\n• alert cement 700\n• alert rebar 35000\n• alert sand 1500\n\n` +
-      `Manage all alerts: buildpricegambia.com/alerts`
+      `Manage all alerts: buildprice-gambia.vercel.app/alerts`
     )
   }
 
@@ -150,9 +150,9 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       orderBy: { createdAt: 'desc' },
     })
     if (guides.length === 0) {
-      return `📚 Guides coming soon! Visit buildpricegambia.com/guides`
+      return `📚 Guides coming soon! Visit buildprice-gambia.vercel.app/guides`
     }
-    const lines = guides.map(g => `• ${g.title}\n  buildpricegambia.com/guides/${g.slug}`)
+    const lines = guides.map(g => `• ${g.title}\n  buildprice-gambia.vercel.app/guides/${g.slug}`)
     return `📚 *Latest Guides*\n\n${lines.join('\n\n')}`
   }
 
@@ -188,7 +188,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       return (
         `🔍 No results for *${matQuery}* in *${locQuery}*.\n\n` +
         `Try searching without location:\nType *${matQuery}*\n\n` +
-        `Or check buildpricegambia.com/search?q=${encodeURIComponent(matQuery)}`
+        `Or check buildprice-gambia.vercel.app/search?q=${encodeURIComponent(matQuery)}`
       )
     }
 
@@ -212,7 +212,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       orderBy: { avgRating: 'desc' },
     })
     if (contractors.length === 0) {
-      return `No verified contractors found for "${specialty}". Visit buildpricegambia.com/contractors`
+      return `No verified contractors found for "${specialty}". Visit buildprice-gambia.vercel.app/contractors`
     }
     const lines = contractors.map(c =>
       `• *${c.name}* — ${c.location}\n  ${c.specialty} | ⭐ ${c.avgRating > 0 ? c.avgRating.toFixed(1) : '—'} | 📞 ${c.contact}`
@@ -233,7 +233,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
     return (
       `✅ *Alert noted!*\n\n` +
       `We'll send you a message when *${material.name}* drops below *D${priceStr}*.\n\n` +
-      `To save this alert permanently, sign up at:\nbuildpricegambia.com/register\n\n` +
+      `To save this alert permanently, sign up at:\nbuildprice-gambia.vercel.app/register\n\n` +
       `Type *menu* for more options`
     )
   }
@@ -256,12 +256,12 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
       `🔍 No results for "*${body.trim()}*".\n\n` +
       `Try: cement, rebar, sand, timber, zinc sheet, blocks\n\n` +
       `Reply *menu* for all options\n` +
-      `Or search: buildpricegambia.com/search?q=${encodeURIComponent(body.trim())}`
+      `Or search: buildprice-gambia.vercel.app/search?q=${encodeURIComponent(body.trim())}`
     )
   }
 
   if (material.prices.length === 0) {
-    return `📦 *${material.name}*\n\nNo prices listed right now.\nCheck buildpricegambia.com for updates`
+    return `📦 *${material.name}*\n\nNo prices listed right now.\nCheck buildprice-gambia.vercel.app for updates`
   }
 
   const lowest = material.prices[0]
@@ -274,7 +274,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
     `${lines.join('\n\n')}\n\n` +
     `✅ Best price: *D${lowest.price}/${lowest.unit}* at ${lowest.supplier.name}\n` +
     `📞 ${lowest.supplier.contact}\n\n` +
-    `📊 Full comparison: buildpricegambia.com/search?q=${encodeURIComponent(material.name)}\n\n` +
+    `📊 Full comparison: buildprice-gambia.vercel.app/search?q=${encodeURIComponent(material.name)}\n\n` +
     `Reply *menu* for more options`
   )
 }
