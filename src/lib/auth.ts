@@ -2,6 +2,10 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { NextRequest } from 'next/server'
 
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  // eslint-disable-next-line no-console
+  console.error('[auth] CRITICAL: JWT_SECRET is not set in production — tokens are being signed with an insecure fallback secret.')
+}
 const SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me'
 
 export type JwtPayload = {

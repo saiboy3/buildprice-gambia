@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { handleIncomingMessage, sendWhatsAppMessage } from '@/lib/whatsapp'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN ?? 'your-webhook-verify-token'
+const APP_SECRET    = process.env.WHATSAPP_APP_SECRET
 
 // Webhook verification (GET) — Meta calls this once to verify the endpoint
 export async function GET(req: NextRequest) {
@@ -17,10 +19,33 @@ export async function GET(req: NextRequest) {
   return new NextResponse('Forbidden', { status: 403 })
 }
 
+/** Verify Meta's X-Hub-Signature-256 header against the raw request body. */
+function isValidSignature(rawBody: string, signatureHeader: string | null): boolean {
+  if (!APP_SECRET) {
+    // Not configured yet — allow through but log loudly so it gets fixed before real traffic.
+    console.warn('[WhatsApp webhook] WHATSAPP_APP_SECRET is not set — signature verification is DISABLED. Set it in Vercel env vars.')
+    return true
+  }
+  if (!signatureHeader) return false
+
+  const expected = 'sha256=' + crypto.createHmac('sha256', APP_SECRET).update(rawBody).digest('hex')
+  const expectedBuf = Buffer.from(expected)
+  const actualBuf   = Buffer.from(signatureHeader)
+  if (expectedBuf.length !== actualBuf.length) return false
+  return crypto.timingSafeEqual(expectedBuf, actualBuf)
+}
+
 // Incoming messages (POST)
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const rawBody = await req.text()
+
+    if (!isValidSignature(rawBody, req.headers.get('x-hub-signature-256'))) {
+      console.error('[WhatsApp webhook] Invalid signature — rejecting request')
+      return NextResponse.json({ ok: false }, { status: 401 })
+    }
+
+    const body = JSON.parse(rawBody)
 
     const entry   = body?.entry?.[0]
     const changes = entry?.changes?.[0]

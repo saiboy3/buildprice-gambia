@@ -185,7 +185,7 @@ export default async function TestPage() {
           ))}
         </div>
         <div className="mt-4 p-3 bg-yellow-500/20 rounded-lg text-yellow-200 text-xs">
-          ⚠️ <strong>To enable real WhatsApp replies:</strong> Set <code>WHATSAPP_PHONE_NUMBER_ID</code>, <code>WHATSAPP_ACCESS_TOKEN</code>, and <code>WHATSAPP_VERIFY_TOKEN</code> in Vercel environment variables, then register the webhook URL at Meta Business Manager:<br />
+          ⚠️ <strong>To enable real WhatsApp replies:</strong> Set <code>WHATSAPP_PHONE_NUMBER_ID</code>, <code>WHATSAPP_ACCESS_TOKEN</code>, <code>WHATSAPP_VERIFY_TOKEN</code>, and <code>WHATSAPP_APP_SECRET</code> (for signature verification) in Vercel environment variables, then register the webhook URL at Meta Business Manager:<br />
           <code className="text-yellow-100 break-all">https://buildprice-gambia.vercel.app/api/whatsapp/webhook</code>
         </div>
       </div>
@@ -200,6 +200,7 @@ export default async function TestPage() {
             { key: 'WHATSAPP_PHONE_NUMBER_ID', status: 'for-whatsapp', note: 'From Meta Business → WhatsApp → API Setup' },
             { key: 'WHATSAPP_ACCESS_TOKEN', status: 'for-whatsapp', note: 'Permanent access token from Meta' },
             { key: 'WHATSAPP_VERIFY_TOKEN', status: 'for-whatsapp', note: 'Any random string — must match Meta webhook config' },
+            { key: 'WHATSAPP_APP_SECRET', status: 'for-whatsapp', note: 'Meta App Dashboard → Settings → Basic. Verifies incoming webhook signatures.' },
             { key: 'NEXT_PUBLIC_APP_URL', status: 'optional', note: 'https://buildprice-gambia.vercel.app' },
           ].map(v => (
             <div key={v.key} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50">

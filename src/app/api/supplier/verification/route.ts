@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth'
+import { sanitizeUrlList } from '@/lib/validate'
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,12 +41,16 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(docUrls) || docUrls.length === 0) {
       return NextResponse.json({ ok: false, message: 'docUrls must be a non-empty array' }, { status: 400 })
     }
+    const validDocs = sanitizeUrlList(docUrls)
+    if (validDocs.length === 0) {
+      return NextResponse.json({ ok: false, message: 'docUrls must contain valid http(s) URLs' }, { status: 400 })
+    }
 
     const supplier = await prisma.supplier.update({
       where: { id: supplierId },
       data: {
         verificationStatus: 'PENDING',
-        verificationDocs: JSON.stringify(docUrls),
+        verificationDocs: JSON.stringify(validDocs),
       },
       select: { verificationStatus: true, verificationNote: true, verifiedAt: true },
     })

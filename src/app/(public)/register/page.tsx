@@ -65,7 +65,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Password</label>
-              <input type="password" className="input" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              <input type="password" className="input" placeholder="Min. 8 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">I am a…</label>

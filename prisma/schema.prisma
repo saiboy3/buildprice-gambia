@@ -435,6 +435,16 @@ model ActivityLog {
   createdAt DateTime @default(now())
 }
 
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  key       String   // e.g. "login:2201001001" or "register:41.203.x.x"
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 
 model PageView {

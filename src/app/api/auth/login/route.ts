@@ -2,11 +2,22 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { comparePassword, signToken } from '@/lib/auth'
 import { ok, err, handleError, log } from '@/lib/api'
+import { isRateLimited, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
     const { phone, password } = await req.json()
     if (!phone || !password) return err('phone and password are required')
+
+    // Rate limit by phone AND by IP: max 8 attempts per 10 minutes each.
+    const ip = getClientIp(req)
+    const [phoneLimited, ipLimited] = await Promise.all([
+      isRateLimited(`login:phone:${phone}`, 8, 10 * 60 * 1000),
+      isRateLimited(`login:ip:${ip}`, 20, 10 * 60 * 1000),
+    ])
+    if (phoneLimited || ipLimited) {
+      return err('Too many login attempts. Please try again in a few minutes.', 429)
+    }
 
     const user = await prisma.user.findUnique({ where: { phone }, include: { supplier: true } })
     if (!user) return err('Invalid credentials', 401)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth'
+import { sanitizeUrlList } from '@/lib/validate'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         contractorId: params.id,
         title,
         description,
-        photoUrls: photoUrls ?? [],
+        photoUrls: JSON.stringify(sanitizeUrlList(photoUrls)),
         location,
         completedAt: completedAt ? new Date(completedAt) : undefined,
       },
