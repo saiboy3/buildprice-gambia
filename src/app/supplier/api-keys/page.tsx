@@ -16,7 +16,7 @@ type ApiKey = {
 }
 
 export default function ApiKeysPage() {
-  const { isSupplier, token } = useAuth()
+  const { isSupplier, token, ready } = useAuth()
   const router = useRouter()
 
   const [keys,     setKeys]     = useState<ApiKey[]>([])
@@ -27,9 +27,10 @@ export default function ApiKeysPage() {
   const [copied,   setCopied]   = useState<string | null>(null)
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     load()
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const load = async () => {
     setLoading(true)

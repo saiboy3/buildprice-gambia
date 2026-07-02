@@ -19,17 +19,20 @@ type AuthCtx = {
   isAdmin: boolean
   isSupplier: boolean
   isContractor: boolean
+  ready: boolean
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null, token: null,
   login: () => {}, logout: () => {},
   isAdmin: false, isSupplier: false, isContractor: false,
+  ready: false,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]   = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     try {
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = localStorage.getItem('bpg_user')
       if (t && u) { setToken(t); setUser(JSON.parse(u)) }
     } catch {}
+    setReady(true)
   }, [])
 
   const login = (t: string, u: User) => {
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      user, token, login, logout,
+      user, token, login, logout, ready,
       isAdmin: user?.role === 'ADMIN',
       isSupplier: user?.role === 'SUPPLIER' || user?.role === 'ADMIN',
       isContractor: user?.role === 'CONTRACTOR',

@@ -14,7 +14,7 @@ type OpenRFQ  = {
 }
 
 export default function SupplierRFQPage() {
-  const { user, token, isSupplier } = useAuth()
+  const { user, token, isSupplier, ready } = useAuth()
   const router = useRouter()
 
   const [rfqs,       setRfqs]       = useState<OpenRFQ[]>([])
@@ -26,12 +26,13 @@ export default function SupplierRFQPage() {
   const [submitMsg,  setSubmitMsg]  = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     fetch('/api/rfq?open=true', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => { if (j.ok) setRfqs(j.data) })
       .finally(() => setLoading(false))
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const openModal = (rfq: OpenRFQ) => {
     setModalRFQ(rfq); setQuotePrice(''); setQuoteMsg(''); setSubmitMsg('')

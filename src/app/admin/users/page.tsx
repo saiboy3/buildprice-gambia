@@ -8,7 +8,7 @@ import { Trash2, Loader2 } from 'lucide-react'
 type User = { id: string; name: string; phone: string; email: string | null; role: string; createdAt: string }
 
 export default function AdminUsers() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [users,   setUsers]   = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,9 +17,10 @@ export default function AdminUsers() {
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

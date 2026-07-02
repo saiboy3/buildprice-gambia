@@ -9,7 +9,7 @@ type Material = { id: string; name: string; category: { id: string; name: string
 type Category = { id: string; name: string }
 
 export default function AdminMaterials() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [materials,  setMaterials]  = useState<Material[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -22,9 +22,10 @@ export default function AdminMaterials() {
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

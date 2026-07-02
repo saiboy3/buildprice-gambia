@@ -13,7 +13,7 @@ type VerificationStatus = {
 }
 
 export default function SupplierVerificationPage() {
-  const { isSupplier, token } = useAuth()
+  const { isSupplier, token, ready } = useAuth()
   const router = useRouter()
 
   const [verif,      setVerif]      = useState<VerificationStatus | null>(null)
@@ -23,12 +23,13 @@ export default function SupplierVerificationPage() {
   const [msg,        setMsg]        = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     fetch('/api/supplier/verification', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => { if (j.ok) setVerif(j.data) })
       .finally(() => setLoading(false))
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const submit = async () => {
     const urls = docUrls.split(',').map(u => u.trim()).filter(Boolean)

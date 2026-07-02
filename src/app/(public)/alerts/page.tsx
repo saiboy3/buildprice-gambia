@@ -12,7 +12,7 @@ type Alert = {
 type Material = { id: string; name: string; category: { name: string } }
 
 export default function AlertsPage() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
 
   const [alerts,    setAlerts]    = useState<Alert[]>([])
@@ -24,9 +24,10 @@ export default function AlertsPage() {
   const [error,     setError]     = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     load()
-  }, [user])
+  }, [ready, user])
 
   const load = async () => {
     setLoading(true)

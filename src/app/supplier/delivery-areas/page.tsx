@@ -13,7 +13,7 @@ type DeliveryArea = {
 }
 
 export default function DeliveryAreasPage() {
-  const { isSupplier, token } = useAuth()
+  const { isSupplier, token, ready } = useAuth()
   const router = useRouter()
 
   const [areas,       setAreas]       = useState<DeliveryArea[]>([])
@@ -24,9 +24,10 @@ export default function DeliveryAreasPage() {
   const [radiusKm,    setRadiusKm]    = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     loadAreas()
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   async function loadAreas() {
     setLoading(true)

@@ -23,16 +23,17 @@ const ACTION_COLORS: Record<string, string> = {
 }
 
 export default function AdminLogs() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [logs,    setLogs]    = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

@@ -24,7 +24,7 @@ type Stats = {
 }
 
 export default function AdminOverview() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [stats,   setStats]   = useState<Stats>({
     materials: 0, suppliers: 0, users: 0, prices: 0, contractors: 0,
@@ -34,6 +34,7 @@ export default function AdminOverview() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     const h = { Authorization: `Bearer ${token}` }
     Promise.all([
@@ -57,7 +58,7 @@ export default function AdminOverview() {
       })
       if (logsData.ok) setLogs(logsData.data.slice(0, 10))
     }).finally(() => setLoading(false))
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>

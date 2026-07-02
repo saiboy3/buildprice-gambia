@@ -12,7 +12,7 @@ type Ad = {
 }
 
 export default function SupplierAdsPage() {
-  const { token, isSupplier } = useAuth()
+  const { token, isSupplier, ready } = useAuth()
   const router = useRouter()
   const [ads, setAds] = useState<Ad[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,10 +20,11 @@ export default function SupplierAdsPage() {
   const [form, setForm] = useState({ headline: '', description: '', placement: 'SEARCH', budget: 500, cpc: 5, startsAt: '', endsAt: '' })
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     fetch('/api/supplier/ads', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(j => { if (j.ok) setAds(j.data) }).finally(() => setLoading(false))
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()

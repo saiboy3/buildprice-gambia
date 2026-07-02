@@ -21,7 +21,7 @@ type Material = { id: string; name: string; category: { name: string } }
 const STATUS_OPTIONS = ['AVAILABLE', 'LIMITED', 'OUT_OF_STOCK']
 
 export default function SupplierDashboard() {
-  const { user, token, isSupplier } = useAuth()
+  const { user, token, isSupplier, ready } = useAuth()
   const router = useRouter()
 
   const [prices,    setPrices]    = useState<Price[]>([])
@@ -39,9 +39,10 @@ export default function SupplierDashboard() {
   const [formError,   setFormError]   = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     loadData()
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const loadData = async () => {
     setLoading(true)

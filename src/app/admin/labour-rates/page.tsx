@@ -19,7 +19,7 @@ const REGIONS = ['Greater Banjul', 'West Coast', 'North Bank', 'Lower River', 'C
 const EMPTY: Omit<LabourRate, 'id'> = { trade: '', ratePerDay: 0, unit: 'man-day', region: 'All Regions' }
 
 export default function AdminLabourRatesPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
   const [rates,       setRates]       = useState<LabourRate[]>([])
@@ -32,9 +32,10 @@ export default function AdminLabourRatesPage() {
   const [error,       setError]       = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

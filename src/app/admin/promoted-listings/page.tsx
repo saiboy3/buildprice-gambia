@@ -19,7 +19,7 @@ const PLACEMENTS = ['SEARCH', 'HOMEPAGE', 'CATEGORY'] as const
 type Placement = typeof PLACEMENTS[number]
 
 export default function PromotedListingsPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
   const [listings,    setListings]    = useState<PromotedListing[]>([])
@@ -35,9 +35,10 @@ export default function PromotedListingsPage() {
   const [endsAt,      setEndsAt]      = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     loadListings()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   async function loadListings() {
     setLoading(true)

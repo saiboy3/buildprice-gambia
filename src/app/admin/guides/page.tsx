@@ -15,7 +15,7 @@ const CATEGORIES = ['cement', 'blocks', 'steel', 'roofing', 'finishing', 'founda
 const EMPTY: Omit<Guide, 'id'> = { slug: '', title: '', category: 'general', content: '', published: false, materialId: '' }
 
 export default function AdminGuidesPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
   const [guides,   setGuides]   = useState<Guide[]>([])
@@ -27,9 +27,10 @@ export default function AdminGuidesPage() {
   const [error,    setError]    = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

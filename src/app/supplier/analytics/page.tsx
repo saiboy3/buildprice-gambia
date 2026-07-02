@@ -17,7 +17,7 @@ type Analytics = {
 }
 
 export default function SupplierAnalyticsPage() {
-  const { isSupplier, token } = useAuth()
+  const { isSupplier, token, ready } = useAuth()
   const router = useRouter()
 
   const [data,        setData]        = useState<Analytics | null>(null)
@@ -25,12 +25,13 @@ export default function SupplierAnalyticsPage() {
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
+    if (!ready) return
     if (!isSupplier) { router.push('/login'); return }
     fetch('/api/supplier/analytics', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => { if (j.ok) setData(j.data) })
       .finally(() => setLoading(false))
-  }, [isSupplier])
+  }, [ready, isSupplier])
 
   const downloadCSV = async () => {
     setDownloading(true)

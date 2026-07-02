@@ -13,7 +13,7 @@ type Supplier = {
 }
 
 export default function AdminSuppliers() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading,   setLoading]   = useState(true)
@@ -21,9 +21,10 @@ export default function AdminSuppliers() {
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

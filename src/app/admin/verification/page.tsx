@@ -12,7 +12,7 @@ type Submission = {
 }
 
 export default function AdminVerificationPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -21,9 +21,10 @@ export default function AdminVerificationPage() {
   const [actioning,   setActioning]   = useState<string | null>(null)
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)

@@ -21,20 +21,21 @@ const DEVICE_ICONS: Record<string, typeof Monitor> = {
 }
 
 export default function AdminAnalyticsPage() {
-  const { token, isAdmin } = useAuth()
+  const { token, isAdmin, ready } = useAuth()
   const router = useRouter()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [days, setDays] = useState(30)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     setLoading(true)
     fetch(`/api/admin/analytics?days=${days}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => { if (j.ok) setData(j.data) })
       .finally(() => setLoading(false))
-  }, [isAdmin, days])
+  }, [ready, isAdmin, days])
 
   if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
   if (!data) return null

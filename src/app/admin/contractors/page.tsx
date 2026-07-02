@@ -15,7 +15,7 @@ type Contractor = {
 }
 
 export default function AdminContractorsPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -30,9 +30,10 @@ export default function AdminContractorsPage() {
   }
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const toggleVerify = async (id: string, current: boolean) => {
     setToggling(id)

@@ -24,19 +24,20 @@ const STATUS_STYLE: Record<string, string> = {
 }
 
 export default function RFQListPage() {
-  const { user, token } = useAuth()
+  const { user, token, ready } = useAuth()
   const router = useRouter()
 
   const [rfqs,    setRfqs]    = useState<RFQ[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!ready) return
     if (!user) { router.push('/login'); return }
     fetch('/api/rfq', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(j => { if (j.ok) setRfqs(j.data) })
       .finally(() => setLoading(false))
-  }, [user])
+  }, [ready, user])
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">

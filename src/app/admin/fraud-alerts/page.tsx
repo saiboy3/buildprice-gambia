@@ -17,7 +17,7 @@ const SEVERITIES = ['INFO', 'WARNING', 'CRITICAL'] as const
 const EMPTY_FORM = { title: '', body: '', severity: 'WARNING' as const, materialId: '' }
 
 export default function AdminFraudAlertsPage() {
-  const { isAdmin, token } = useAuth()
+  const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
   const [alerts,    setAlerts]    = useState<Alert[]>([])
@@ -28,9 +28,10 @@ export default function AdminFraudAlertsPage() {
   const [error,     setError]     = useState('')
 
   useEffect(() => {
+    if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     load()
-  }, [isAdmin])
+  }, [ready, isAdmin])
 
   const load = async () => {
     setLoading(true)
