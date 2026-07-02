@@ -20,6 +20,13 @@ type Price = {
   supplier: { id: string; name: string; location: string; contact: string; verified: boolean }
 }
 
+type SponsoredAd = {
+  id: string
+  headline: string | null
+  description: string | null
+  supplier: { id: string; name: string; location: string }
+}
+
 const LOCATIONS = ['Banjul', 'Serrekunda', 'Bakau', 'Brikama', 'Farafenni', 'Basse']
 
 export default function SearchClient() {
@@ -35,6 +42,15 @@ export default function SearchClient() {
   const [minPrice,   setMinPrice]   = useState('')
   const [maxPrice,   setMaxPrice]   = useState('')
   const [showFilter, setShowFilter] = useState(false)
+  const [sponsored,  setSponsored]  = useState<SponsoredAd[]>([])
+
+  // fetch sponsored listings
+  useEffect(() => {
+    fetch('/api/promoted-listings')
+      .then(r => r.json())
+      .then(j => { if (j.ok) setSponsored(j.data) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!q) { setPrices([]); return }
@@ -49,6 +65,12 @@ export default function SearchClient() {
         if (minPrice) data = data.filter(p => p.price >= parseFloat(minPrice))
         if (maxPrice) data = data.filter(p => p.price <= parseFloat(maxPrice))
         setPrices(data)
+        // track search event
+        fetch('/api/analytics/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, results: data.length, sessionId: sessionStorage.getItem('_bpg_sid') }),
+        }).catch(() => {})
       })
       .finally(() => setLoading(false))
   }, [q, location, minPrice, maxPrice])
@@ -117,6 +139,30 @@ export default function SearchClient() {
               <X size={14} /> Clear
             </button>
           )}
+        </div>
+      )}
+
+      {/* Sponsored listings */}
+      {q && sponsored.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {sponsored.map(ad => (
+            <div key={ad.id} className="border-2 border-primary-200 bg-primary-50 rounded-xl p-4 flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs bg-primary-500 text-white px-2 py-0.5 rounded font-bold">Sponsored</span>
+                  <Link href={`/suppliers/${ad.supplier.id}`} className="font-bold text-gray-900 hover:text-primary-600">{ad.supplier.name}</Link>
+                </div>
+                {ad.headline && <p className="text-sm font-semibold text-gray-700">{ad.headline}</p>}
+                {ad.description && <p className="text-xs text-gray-500 mt-0.5">{ad.description}</p>}
+                <p className="text-xs text-gray-400 mt-1">{ad.supplier.location}</p>
+              </div>
+              <Link href={`/suppliers/${ad.supplier.id}`}
+                onClick={() => fetch('/api/analytics/ad-click', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ promotedListingId: ad.id }) }).catch(() => {})}
+                className="btn-primary text-xs shrink-0">
+                View →
+              </Link>
+            </div>
+          ))}
         </div>
       )}
 

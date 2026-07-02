@@ -214,15 +214,25 @@ model DeliveryArea {
 // ─── Promoted Listings ────────────────────────────────────────────────────────
 
 model PromotedListing {
-  id        String   @id @default(cuid())
-  placement String   @default("SEARCH") // SEARCH | HOMEPAGE | CATEGORY
-  startsAt  DateTime
-  endsAt    DateTime
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  placement      String   @default("SEARCH") // SEARCH | HOMEPAGE | CATEGORY
+  startsAt       DateTime
+  endsAt         DateTime
+  active         Boolean  @default(true)
+  budget         Float    @default(0)
+  spent          Float    @default(0)
+  cpc            Float    @default(5)
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  targetCategory String?
+  headline       String?
+  description    String?
+  createdAt      DateTime @default(now())
 
-  supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplier      Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  adImpressions AdImpression[]
+  adClicks      AdClick[]
 }
 
 // ─── Neighbourhood Price Index ────────────────────────────────────────────────
@@ -422,6 +432,58 @@ model ActivityLog {
   action    String
   details   String?
   createdAt DateTime @default(now())
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+model PageView {
+  id        String   @id @default(cuid())
+  page      String
+  referrer  String?
+  sessionId String
+  device    String?  // mobile | desktop | tablet
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([page])
+  @@index([createdAt])
+  @@index([sessionId])
+}
+
+model SearchEvent {
+  id        String   @id @default(cuid())
+  query     String
+  results   Int      @default(0)
+  sessionId String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([query])
+  @@index([createdAt])
+}
+
+model AdImpression {
+  id                String   @id @default(cuid())
+  promotedListingId String
+  sessionId         String?
+  page              String?
+  createdAt         DateTime @default(now())
+
+  promotedListing PromotedListing @relation(fields: [promotedListingId], references: [id], onDelete: Cascade)
+
+  @@index([promotedListingId])
+  @@index([createdAt])
+}
+
+model AdClick {
+  id                String   @id @default(cuid())
+  promotedListingId String
+  sessionId         String?
+  createdAt         DateTime @default(now())
+
+  promotedListing PromotedListing @relation(fields: [promotedListingId], references: [id], onDelete: Cascade)
+
+  @@index([promotedListingId])
 }
 
 // ─── Estimates ────────────────────────────────────────────────────────────────

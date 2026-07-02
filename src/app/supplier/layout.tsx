@@ -1,11 +1,12 @@
 import Providers from '@/components/Providers'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
-import { LayoutDashboard, BarChart2, ShieldCheck, FileText, Key, MapPin } from 'lucide-react'
+import { LayoutDashboard, BarChart2, ShieldCheck, FileText, Key, MapPin, Megaphone } from 'lucide-react'
 
 const supplierLinks = [
   { href: '/supplier/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
   { href: '/supplier/analytics',      label: 'Analytics',       icon: BarChart2 },
+  { href: '/supplier/ads',            label: 'Advertise',       icon: Megaphone },
   { href: '/supplier/verification',   label: 'Verification',    icon: ShieldCheck },
   { href: '/supplier/rfq',            label: 'RFQ Quotes',      icon: FileText },
   { href: '/supplier/api-keys',       label: 'API Keys',        icon: Key },
