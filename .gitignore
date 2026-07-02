@@ -6,3 +6,4 @@ prisma/dev.db-journal
 *.output
 
 .vercel
+.env*.local
