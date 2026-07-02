@@ -15,6 +15,8 @@ type PromotedListing = {
   supplier: { id: string; name: string }
 }
 
+type SupplierOption = { id: string; name: string; location: string }
+
 const PLACEMENTS = ['SEARCH', 'HOMEPAGE', 'CATEGORY'] as const
 type Placement = typeof PLACEMENTS[number]
 
@@ -23,6 +25,7 @@ export default function PromotedListingsPage() {
   const router = useRouter()
 
   const [listings,    setListings]    = useState<PromotedListing[]>([])
+  const [suppliers,   setSuppliers]   = useState<SupplierOption[]>([])
   const [loading,     setLoading]     = useState(true)
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
@@ -38,6 +41,7 @@ export default function PromotedListingsPage() {
     if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     loadListings()
+    loadSuppliers()
   }, [ready, isAdmin])
 
   async function loadListings() {
@@ -53,9 +57,17 @@ export default function PromotedListingsPage() {
     }
   }
 
+  async function loadSuppliers() {
+    try {
+      const res  = await fetch('/api/suppliers', { headers: { Authorization: `Bearer ${token}` } })
+      const json = await res.json()
+      if (json.ok) setSuppliers(json.data)
+    } catch {}
+  }
+
   async function createListing() {
     setError('')
-    if (!supplierId.trim()) { setError('Supplier ID is required'); return }
+    if (!supplierId.trim()) { setError('Please select a supplier'); return }
     if (!startsAt || !endsAt) { setError('Start and end dates are required'); return }
     if (new Date(endsAt) <= new Date(startsAt)) { setError('End date must be after start date'); return }
 
@@ -115,14 +127,13 @@ export default function PromotedListingsPage() {
           <h2 className="font-semibold text-gray-900 mb-4">Create Promoted Listing</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Supplier ID *</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Supplier cuid…"
-                value={supplierId}
-                onChange={e => setSupplierId(e.target.value)}
-              />
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Supplier *</label>
+              <select className="input" value={supplierId} onChange={e => setSupplierId(e.target.value)}>
+                <option value="">Select a supplier…</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} — {s.location}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1 block">Placement *</label>
