@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, BarChart2, MousePointer, Eye, DollarSign } from 'lucide-react'
+import { GAMBIA_LOCATIONS } from '@/lib/location'
 
 type Ad = {
   id: string; headline: string | null; description: string | null
   placement: string; active: boolean; budget: number; spent: number
   cpc: number; impressions: number; clicks: number
-  startsAt: string; endsAt: string
+  startsAt: string; endsAt: string; targetLocation: string | null
 }
 
 export default function SupplierAdsPage() {
@@ -17,7 +18,7 @@ export default function SupplierAdsPage() {
   const [ads, setAds] = useState<Ad[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ headline: '', description: '', placement: 'SEARCH', budget: 500, cpc: 5, startsAt: '', endsAt: '' })
+  const [form, setForm] = useState({ headline: '', description: '', placement: 'SEARCH', budget: 500, cpc: 5, startsAt: '', endsAt: '', targetLocation: '' })
 
   useEffect(() => {
     if (!ready) return
@@ -35,7 +36,7 @@ export default function SupplierAdsPage() {
       body: JSON.stringify(form),
     })
     const j = await res.json()
-    if (j.ok) { setAds(prev => [j.data, ...prev]); setForm({ headline: '', description: '', placement: 'SEARCH', budget: 500, cpc: 5, startsAt: '', endsAt: '' }) }
+    if (j.ok) { setAds(prev => [j.data, ...prev]); setForm({ headline: '', description: '', placement: 'SEARCH', budget: 500, cpc: 5, startsAt: '', endsAt: '', targetLocation: '' }) }
     setCreating(false)
   }
 
@@ -80,6 +81,13 @@ export default function SupplierAdsPage() {
               <option value="CATEGORY">Category Page (D4/click)</option>
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Target Location</label>
+            <select className="input w-full" value={form.targetLocation} onChange={e => setForm(f => ({ ...f, targetLocation: e.target.value }))}>
+              <option value="">All Gambia</option>
+              {GAMBIA_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+            </select>
+          </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-gray-600 mb-1">Short Description</label>
             <input className="input w-full" placeholder="e.g. OPC & PPC cement, verified supplier, delivery available" value={form.description}
@@ -122,7 +130,7 @@ export default function SupplierAdsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="font-semibold text-gray-900">{ad.headline ?? 'Untitled'}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{ad.placement} · {new Date(ad.startsAt).toLocaleDateString()} → {new Date(ad.endsAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{ad.placement} · {ad.targetLocation ?? 'All Gambia'} · {new Date(ad.startsAt).toLocaleDateString()} → {new Date(ad.endsAt).toLocaleDateString()}</p>
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${ad.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {ad.active ? 'Active' : 'Ended'}

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     requireAuth(req, ['ADMIN'])
 
-    const { supplierId, placement, startsAt, endsAt } = await req.json()
+    const { supplierId, placement, startsAt, endsAt, targetLocation } = await req.json()
     if (!supplierId || !startsAt || !endsAt) {
       return NextResponse.json({ ok: false, message: 'supplierId, startsAt, and endsAt are required' }, { status: 400 })
     }
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         placement,
         startsAt: new Date(startsAt),
         endsAt: new Date(endsAt),
+        targetLocation: targetLocation || null,
       },
     })
     return NextResponse.json({ ok: true, data: listing }, { status: 201 })

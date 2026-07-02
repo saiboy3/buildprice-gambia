@@ -19,13 +19,14 @@ export async function POST(req: NextRequest) {
   if (!user || user.role !== 'SUPPLIER') return NextResponse.json({ ok: false }, { status: 401 })
   const supplier = await prisma.supplier.findUnique({ where: { userId: user.id } })
   if (!supplier) return NextResponse.json({ ok: false }, { status: 404 })
-  const { headline, description, placement, budget, cpc, startsAt, endsAt } = await req.json()
+  const { headline, description, placement, budget, cpc, startsAt, endsAt, targetLocation } = await req.json()
   const ad = await prisma.promotedListing.create({
     data: {
       supplierId: supplier.id, headline, description,
       placement: placement ?? 'SEARCH',
       budget: Number(budget), cpc: Number(cpc),
       startsAt: new Date(startsAt), endsAt: new Date(endsAt),
+      targetLocation: targetLocation || null,
       active: true,
     },
   })

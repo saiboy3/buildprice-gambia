@@ -10,6 +10,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import LanguageToggle from '@/components/LanguageToggle'
+import LocationPicker from '@/components/LocationPicker'
 import { useT, useLang } from '@/lib/LanguageContext'
 
 export default function Navbar() {
@@ -93,6 +94,7 @@ export default function Navbar() {
           )}
 
           <LanguageToggle />
+          <LocationPicker />
 
           {user ? (
             <div className="flex items-center gap-3 border-l border-gray-200 pl-3 ml-1">
@@ -148,8 +150,9 @@ export default function Navbar() {
           <Link href="/admin" onClick={() => setOpen(false)} className="text-purple-700">Admin Panel</Link>
         )}
 
-        <div className="pt-1">
+        <div className="pt-1 flex items-center gap-2">
           <LanguageToggle />
+          <LocationPicker />
         </div>
 
         {user ? (

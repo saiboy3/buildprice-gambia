@@ -10,6 +10,7 @@ import SponsoredBanner from '@/components/SponsoredBanner'
 import { SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useT } from '@/lib/LanguageContext'
+import { getUserLocation } from '@/lib/location'
 
 type Price = {
   id: string
@@ -38,6 +39,13 @@ export default function SearchClient() {
   const [showFilter, setShowFilter] = useState(false)
 
   useEffect(() => {
+    if (!locParam) {
+      const stored = getUserLocation()
+      if (stored) setLocation(stored)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!q) { setPrices([]); return }
     setLoading(true)
     fetch('/api/prices')
@@ -54,7 +62,7 @@ export default function SearchClient() {
         fetch('/api/analytics/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q, results: data.length, sessionId: sessionStorage.getItem('_bpg_sid') }),
+          body: JSON.stringify({ query: q, results: data.length, sessionId: sessionStorage.getItem('_bpg_sid'), location: location || getUserLocation() }),
         }).catch(() => {})
       })
       .finally(() => setLoading(false))

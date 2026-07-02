@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { getUserLocation } from '@/lib/location'
 
 type SponsoredAd = {
   id: string
@@ -35,10 +36,17 @@ export default function SponsoredBanner({
   const tracked = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    fetch(`/api/promoted-listings?placement=${placement}`)
-      .then(r => r.json())
-      .then(j => { if (j.ok) setAds(j.data) })
-      .catch(() => {})
+    const fetchAds = () => {
+      const loc = getUserLocation()
+      const url = `/api/promoted-listings?placement=${placement}${loc ? `&location=${encodeURIComponent(loc)}` : ''}`
+      fetch(url)
+        .then(r => r.json())
+        .then(j => { if (j.ok) setAds(j.data) })
+        .catch(() => {})
+    }
+    fetchAds()
+    window.addEventListener('bpg:location-changed', fetchAds)
+    return () => window.removeEventListener('bpg:location-changed', fetchAds)
   }, [placement])
 
   // Fire one impression per ad per mount

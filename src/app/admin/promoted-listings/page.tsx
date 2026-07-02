@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Star, Plus, Trash2, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Star, Plus, Trash2, Loader2, CheckCircle, XCircle, MapPin } from 'lucide-react'
+import { GAMBIA_LOCATIONS } from '@/lib/location'
 
 type PromotedListing = {
   id: string
@@ -12,6 +13,7 @@ type PromotedListing = {
   endsAt: string
   active: boolean
   createdAt: string
+  targetLocation: string | null
   supplier: { id: string; name: string }
 }
 
@@ -36,6 +38,7 @@ export default function PromotedListingsPage() {
   const [placement,   setPlacement]   = useState<Placement>('SEARCH')
   const [startsAt,    setStartsAt]    = useState('')
   const [endsAt,      setEndsAt]      = useState('')
+  const [targetLocation, setTargetLocation] = useState('')
 
   useEffect(() => {
     if (!ready) return
@@ -76,11 +79,11 @@ export default function PromotedListingsPage() {
       const res  = await fetch('/api/admin/promoted-listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ supplierId: supplierId.trim(), placement, startsAt, endsAt }),
+        body: JSON.stringify({ supplierId: supplierId.trim(), placement, startsAt, endsAt, targetLocation: targetLocation || null }),
       })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Failed to create listing'); return }
-      setSupplierId(''); setStartsAt(''); setEndsAt(''); setPlacement('SEARCH')
+      setSupplierId(''); setStartsAt(''); setEndsAt(''); setPlacement('SEARCH'); setTargetLocation('')
       setShowForm(false)
       loadListings()
     } finally {
@@ -143,7 +146,13 @@ export default function PromotedListingsPage() {
                 ))}
               </select>
             </div>
-            <div className="hidden sm:block" />
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Target Location</label>
+              <select className="input" value={targetLocation} onChange={e => setTargetLocation(e.target.value)}>
+                <option value="">All locations</option>
+                {GAMBIA_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+              </select>
+            </div>
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1 block">Start Date *</label>
               <input type="date" className="input" value={startsAt} onChange={e => setStartsAt(e.target.value)} />
@@ -179,6 +188,7 @@ export default function PromotedListingsPage() {
                 <tr>
                   <th className="text-left px-4 py-2.5">Supplier</th>
                   <th className="text-left px-4 py-2.5">Placement</th>
+                  <th className="text-left px-4 py-2.5">Location</th>
                   <th className="text-left px-4 py-2.5">Start</th>
                   <th className="text-left px-4 py-2.5">End</th>
                   <th className="text-center px-4 py-2.5">Active</th>
@@ -200,6 +210,12 @@ export default function PromotedListingsPage() {
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${placementBadge(listing.placement)}`}>
                           {listing.placement}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+                          <MapPin size={12} className="text-gray-400" />
+                          {listing.targetLocation ?? 'All locations'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{new Date(listing.startsAt).toLocaleDateString('en-GB')}</td>

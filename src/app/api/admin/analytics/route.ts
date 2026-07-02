@@ -9,12 +9,14 @@ export async function GET(req: NextRequest) {
   const days = Number(new URL(req.url).searchParams.get('days') ?? '30')
   const since = new Date(Date.now() - days * 86400000)
 
-  const [totalViews, uniqueSessionsRaw, topPages, topSearches, deviceBreakdown, dailyViews, adStats] = await Promise.all([
+  const [totalViews, uniqueSessionsRaw, topPages, topSearches, deviceBreakdown, locationBreakdown, topSearchesByLocation, dailyViews, adStats] = await Promise.all([
     prisma.pageView.count({ where: { createdAt: { gte: since } } }),
     prisma.pageView.findMany({ where: { createdAt: { gte: since } }, select: { sessionId: true }, distinct: ['sessionId'] }),
     prisma.pageView.groupBy({ by: ['page'], where: { createdAt: { gte: since } }, _count: { id: true }, orderBy: { _count: { id: 'desc' } }, take: 10 }),
     prisma.searchEvent.groupBy({ by: ['query'], where: { createdAt: { gte: since } }, _count: { id: true }, orderBy: { _count: { id: 'desc' } }, take: 10 }),
     prisma.pageView.groupBy({ by: ['device'], where: { createdAt: { gte: since } }, _count: { id: true } }),
+    prisma.pageView.groupBy({ by: ['location'], where: { createdAt: { gte: since }, location: { not: null } }, _count: { id: true }, orderBy: { _count: { id: 'desc' } } }),
+    prisma.searchEvent.groupBy({ by: ['location', 'query'], where: { createdAt: { gte: since }, location: { not: null } }, _count: { id: true }, orderBy: { _count: { id: 'desc' } }, take: 20 }),
     // daily views for chart (last N days)
     prisma.$queryRaw`
       SELECT DATE("createdAt") as date, COUNT(*) as views
@@ -42,6 +44,8 @@ export async function GET(req: NextRequest) {
       topPages: topPages.map(p => ({ page: p.page, views: p._count.id })),
       topSearches: topSearches.map(s => ({ query: s.query, count: s._count.id })),
       deviceBreakdown: deviceBreakdown.map(d => ({ device: d.device ?? 'unknown', count: d._count.id })),
+      locationBreakdown: locationBreakdown.map(l => ({ location: l.location ?? 'unknown', count: l._count.id })),
+      topSearchesByLocation: topSearchesByLocation.map(s => ({ location: s.location, query: s.query, count: s._count.id })),
       dailyViews,
       adStats,
     },

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import { getUserLocation } from '@/lib/location'
 
 function getOrCreateSession(): string {
   let sid = sessionStorage.getItem('_bpg_sid')
@@ -34,7 +35,7 @@ export default function AnalyticsTracker() {
     fetch('/api/analytics/pageview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: pathname, referrer, sessionId, device }),
+      body: JSON.stringify({ page: pathname, referrer, sessionId, device, location: getUserLocation() }),
       keepalive: true,
     }).catch(() => {})
   }, [pathname])

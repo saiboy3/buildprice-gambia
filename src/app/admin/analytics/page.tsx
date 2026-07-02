@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Eye, Users, Search, Monitor, Smartphone, Tablet, TrendingUp, Loader2, BarChart2, MousePointer } from 'lucide-react'
+import { Eye, Users, Search, Monitor, Smartphone, Tablet, TrendingUp, Loader2, BarChart2, MousePointer, MapPin } from 'lucide-react'
 
 type AnalyticsData = {
   totalViews: number
@@ -12,6 +12,8 @@ type AnalyticsData = {
   deviceBreakdown: { device: string; count: number }[]
   dailyViews: { date: string; views: number }[]
   adStats: { id: string; headline: string; impressions: number; clicks: number; spent: number; budget: number; active: boolean; supplier: { name: string } }[]
+  locationBreakdown: { location: string; count: number }[]
+  topSearchesByLocation: { location: string; query: string; count: number }[]
 }
 
 const DEVICE_ICONS: Record<string, typeof Monitor> = {
@@ -116,6 +118,31 @@ export default function AdminAnalyticsPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        {/* Location breakdown */}
+        <div className="card">
+          <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin size={16} className="text-primary-500" /> Visitor Locations</h2>
+          {data.locationBreakdown.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-6">No location data yet — visitors haven't set a location.</p>
+          ) : (
+            <div className="space-y-2">
+              {data.locationBreakdown.map(l => {
+                const max = data.locationBreakdown[0]?.count || 1
+                return (
+                  <div key={l.location} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700 font-medium">{l.location}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-gray-100 rounded-full h-1.5">
+                        <div className="bg-primary-400 h-1.5 rounded-full" style={{ width: `${(l.count / max) * 100}%` }} />
+                      </div>
+                      <span className="text-gray-500 text-xs w-8 text-right">{l.count}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Device breakdown */}
         <div className="card">
           <h2 className="font-bold text-gray-900 mb-4">Devices</h2>
@@ -144,7 +171,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Ad performance */}
-        <div className="card lg:col-span-2">
+        <div className="card lg:col-span-3">
           <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><BarChart2 size={16} className="text-primary-500" /> Ad Performance</h2>
           {data.adStats.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-6">No active ads yet.</p>
@@ -195,6 +222,18 @@ export default function AdminAnalyticsPage() {
           ))}
           {data.topSearches.length === 0 && <p className="text-gray-400 text-sm">Search data will appear here as users search the platform.</p>}
         </div>
+        {data.topSearchesByLocation.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-primary-200">
+            <p className="text-xs font-semibold text-gray-500 mb-2">By location:</p>
+            <div className="flex flex-wrap gap-2">
+              {data.topSearchesByLocation.slice(0, 10).map((s, i) => (
+                <span key={i} className="bg-white border border-primary-200 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                  📍 {s.location}: {s.query} ({s.count})
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

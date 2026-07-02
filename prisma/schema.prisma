@@ -225,6 +225,7 @@ model PromotedListing {
   impressions    Int      @default(0)
   clicks         Int      @default(0)
   targetCategory String?
+  targetLocation String?  // Banjul | Serrekunda | Bakau | Brikama | Farafenni | Basse — null/empty = all locations
   headline       String?
   description    String?
   createdAt      DateTime @default(now())
@@ -442,12 +443,14 @@ model PageView {
   referrer  String?
   sessionId String
   device    String?  // mobile | desktop | tablet
+  location  String?  // Banjul | Serrekunda | Bakau | Brikama | Farafenni | Basse …
   userId    String?
   createdAt DateTime @default(now())
 
   @@index([page])
   @@index([createdAt])
   @@index([sessionId])
+  @@index([location])
 }
 
 model SearchEvent {
@@ -455,11 +458,13 @@ model SearchEvent {
   query     String
   results   Int      @default(0)
   sessionId String?
+  location  String?
   userId    String?
   createdAt DateTime @default(now())
 
   @@index([query])
   @@index([createdAt])
+  @@index([location])
 }
 
 model AdImpression {

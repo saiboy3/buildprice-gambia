@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
     const now = new Date()
     const { searchParams } = new URL(req.url)
     const placement = searchParams.get('placement')
+    const location  = searchParams.get('location')
 
     const listings = await prisma.promotedListing.findMany({
       where: {
@@ -13,6 +14,9 @@ export async function GET(req: NextRequest) {
         startsAt: { lte: now },
         active: true,
         ...(placement ? { placement } : {}),
+        // location targeting: show untargeted ads to everyone, and location-targeted
+        // ads only to visitors from a matching location
+        ...(location ? { OR: [{ targetLocation: null }, { targetLocation: '' }, { targetLocation: location }] } : {}),
       },
       include: {
         supplier: {
@@ -21,7 +25,17 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { startsAt: 'desc' },
     })
-    return NextResponse.json({ ok: true, data: listings })
+
+    // Rank location-matched ads first, then untargeted ads
+    const ranked = location
+      ? [...listings].sort((a, b) => {
+          const aMatch = a.targetLocation === location ? 1 : 0
+          const bMatch = b.targetLocation === location ? 1 : 0
+          return bMatch - aMatch
+        })
+      : listings
+
+    return NextResponse.json({ ok: true, data: ranked })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ ok: false, message: 'Internal server error' }, { status: 500 })
