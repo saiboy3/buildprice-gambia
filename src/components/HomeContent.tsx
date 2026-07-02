@@ -3,6 +3,7 @@ import { useT, useLang } from '@/lib/LanguageContext'
 import Link from 'next/link'
 import { CATEGORY_META } from '@/lib/visual'
 import { TrendingDown, Zap, MessageSquare, ShieldCheck, ArrowRight } from 'lucide-react'
+import SponsoredBanner from '@/components/SponsoredBanner'
 
 export default function HomeContent() {
   const tr = useT()
@@ -11,6 +12,11 @@ export default function HomeContent() {
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Sponsored (homepage placement) */}
+      <section className="max-w-6xl mx-auto px-4 pt-8">
+        <SponsoredBanner placement="HOMEPAGE" page="/" className="space-y-2" />
+      </section>
+
       {/* Browse by Category */}
       <section className="max-w-6xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-6">

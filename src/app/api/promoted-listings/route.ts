@@ -4,10 +4,15 @@ import { prisma } from '@/lib/db'
 export async function GET(req: NextRequest) {
   try {
     const now = new Date()
+    const { searchParams } = new URL(req.url)
+    const placement = searchParams.get('placement')
+
     const listings = await prisma.promotedListing.findMany({
       where: {
         endsAt: { gt: now },
         startsAt: { lte: now },
+        active: true,
+        ...(placement ? { placement } : {}),
       },
       include: {
         supplier: {
