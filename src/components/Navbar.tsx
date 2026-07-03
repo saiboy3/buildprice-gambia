@@ -16,8 +16,9 @@ import { useT, useLang } from '@/lib/LanguageContext'
 export default function Navbar() {
   const { user, logout, isAdmin, isSupplier, isContractor } = useAuth()
   const pathname = usePathname()
-  const [open,           setOpen]           = useState(false)
-  const [supplierDdOpen, setSupplierDdOpen] = useState(false)
+  const [open,            setOpen]            = useState(false)
+  const [supplierDdOpen,  setSupplierDdOpen]  = useState(false)
+  const [resourcesDdOpen, setResourcesDdOpen] = useState(false)
   const tr = useT()
   const { locale } = useLang()
 
@@ -26,11 +27,15 @@ export default function Navbar() {
     { href: '/suppliers',   label: tr('nav.suppliers') },
     { href: '/estimator',   label: tr('nav.estimator') },
     { href: '/contractors', label: tr('nav.contractors') },
-    { href: '/map',         label: tr('nav.map'),        icon: Map },
-    { href: '/forum',       label: tr('nav.forum'),      icon: MessageSquare },
-    { href: '/guides',      label: tr('nav.guides'),     icon: BookOpen },
-    { href: '/rfq',         label: tr('nav.getQuotes'),  icon: FileText },
   ]
+
+  const resourceLinks = [
+    { href: '/map',    label: tr('nav.map'),        icon: Map },
+    { href: '/forum',  label: tr('nav.forum'),      icon: MessageSquare },
+    { href: '/guides', label: tr('nav.guides'),     icon: BookOpen },
+    { href: '/rfq',    label: tr('nav.getQuotes'),  icon: FileText },
+  ]
+  const resourcesActive = resourceLinks.some(l => pathname === l.href || pathname.startsWith(l.href + '/'))
 
   const linkClass = (href: string) =>
     pathname === href || pathname.startsWith(href + '/')
@@ -53,6 +58,29 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+
+          {/* Resources dropdown — Map, Forum, Guides, Get Quotes */}
+          <div className="relative">
+            <button
+              onClick={() => setResourcesDdOpen(s => !s)}
+              className={`flex items-center gap-1 transition-colors ${resourcesActive ? 'text-primary-600 font-semibold' : 'text-gray-600 hover:text-primary-600'}`}
+            >
+              {tr('nav.resources')} <ChevronDown size={12} />
+            </button>
+            {resourcesDdOpen && (
+              <div
+                className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50"
+                onMouseLeave={() => setResourcesDdOpen(false)}
+              >
+                {resourceLinks.map(({ href, label, icon: Icon }) => (
+                  <Link key={href} href={href} onClick={() => setResourcesDdOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 text-gray-700">
+                    <Icon size={14} /> {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           {user && (
             <Link href="/alerts" className={`flex items-center gap-1 ${linkClass('/alerts')}`}>
@@ -125,6 +153,18 @@ export default function Navbar() {
             {label}
           </Link>
         ))}
+
+        <div className="pt-1 border-t border-gray-100">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{tr('nav.resources')}</p>
+          <div className="flex flex-col gap-3">
+            {resourceLinks.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href} onClick={() => setOpen(false)}
+                className={`flex items-center gap-2 ${pathname === href ? 'text-primary-600 font-semibold' : 'hover:text-primary-600 transition-colors'}`}>
+                <Icon size={14} /> {label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {user && (
           <Link href="/alerts" onClick={() => setOpen(false)} className="flex items-center gap-1">

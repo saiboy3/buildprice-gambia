@@ -28,19 +28,31 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [days, setDays] = useState(30)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!ready) return
     if (!isAdmin) { router.push('/login'); return }
     setLoading(true)
+    setError('')
     fetch(`/api/admin/analytics?days=${days}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
-      .then(j => { if (j.ok) setData(j.data) })
+      .then(j => { if (j.ok) setData(j.data); else setError(j.message ?? 'Failed to load analytics') })
+      .catch(() => setError('Failed to load analytics — check your connection and try again'))
       .finally(() => setLoading(false))
   }, [ready, isAdmin, days])
 
   if (loading) return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-primary-500" size={28} /></div>
-  if (!data) return null
+
+  if (error || !data) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="card text-center py-12 text-red-500 text-sm">
+          {error || 'Failed to load analytics.'}
+        </div>
+      </div>
+    )
+  }
 
   const totalDevices = data.deviceBreakdown.reduce((s, d) => s + d.count, 0)
 
