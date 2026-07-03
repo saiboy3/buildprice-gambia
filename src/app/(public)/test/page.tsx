@@ -201,6 +201,8 @@ export default async function TestPage() {
             { key: 'WHATSAPP_ACCESS_TOKEN', status: 'for-whatsapp', note: 'Permanent access token from Meta' },
             { key: 'WHATSAPP_VERIFY_TOKEN', status: 'for-whatsapp', note: 'Any random string — must match Meta webhook config' },
             { key: 'WHATSAPP_APP_SECRET', status: 'for-whatsapp', note: 'Meta App Dashboard → Settings → Basic. Verifies incoming webhook signatures.' },
+            { key: 'NEXT_PUBLIC_SENTRY_DSN', status: 'for-monitoring', note: 'sentry.io → create a Next.js project → copy DSN. Catches client-side errors.' },
+            { key: 'SENTRY_DSN', status: 'for-monitoring', note: 'Same DSN as above — used for server/edge error reporting.' },
             { key: 'NEXT_PUBLIC_APP_URL', status: 'optional', note: 'https://buildprice-gambia.vercel.app' },
           ].map(v => (
             <div key={v.key} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50">
@@ -208,9 +210,10 @@ export default async function TestPage() {
               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${
                 v.status === 'required' ? 'bg-red-100 text-red-700' :
                 v.status === 'for-whatsapp' ? 'bg-green-100 text-green-700' :
+                v.status === 'for-monitoring' ? 'bg-purple-100 text-purple-700' :
                 'bg-gray-100 text-gray-500'
               }`}>
-                {v.status === 'required' ? 'Required' : v.status === 'for-whatsapp' ? 'WhatsApp' : 'Optional'}
+                {v.status === 'required' ? 'Required' : v.status === 'for-whatsapp' ? 'WhatsApp' : v.status === 'for-monitoring' ? 'Monitoring' : 'Optional'}
               </span>
               <span className="text-xs text-gray-500">{v.note}</span>
             </div>
