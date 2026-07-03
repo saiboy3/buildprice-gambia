@@ -5,13 +5,14 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/context'
 import {
   HardHat, LayoutDashboard, Package, Store, Users, ScrollText, LogOut, Hammer,
-  AlertTriangle, BookOpen, ShieldCheck, Star, Wrench, BarChart2,
+  AlertTriangle, BookOpen, ShieldCheck, Star, Wrench, BarChart2, MessageSquareText,
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const links = [
   { href: '/admin',                    label: 'Overview',            icon: LayoutDashboard },
   { href: '/admin/analytics',          label: 'Analytics',           icon: BarChart2 },
+  { href: '/admin/feedback',           label: 'Tester Feedback',     icon: MessageSquareText },
   { href: '/admin/materials',          label: 'Materials',           icon: Package },
   { href: '/admin/suppliers',          label: 'Suppliers',           icon: Store },
   { href: '/admin/contractors',        label: 'Contractors',         icon: Hammer },

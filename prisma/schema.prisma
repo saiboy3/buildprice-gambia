@@ -445,6 +445,22 @@ model RateLimitEvent {
   @@index([key, createdAt])
 }
 
+// ─── Tester Feedback ──────────────────────────────────────────────────────────
+
+model Feedback {
+  id        String   @id @default(cuid())
+  message   String
+  page      String?  // path the tester was on when they submitted
+  contact   String?  // optional phone/email so admin can follow up
+  role      String?  // self-reported: buyer | supplier | contractor | other
+  status    String   @default("NEW") // NEW | REVIEWED | RESOLVED
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 
 model PageView {
