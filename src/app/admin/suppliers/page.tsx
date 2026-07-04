@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Trash2, Loader2, MapPin, Phone } from 'lucide-react'
+import { CheckCircle, XCircle, Trash2, Loader2, MapPin, Phone, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 type Supplier = {
   id: string; name: string; location: string; contact: string; verified: boolean
   views: number; inquiries: number; prices: any[]
-  user: { name: string; phone: string; email: string | null }
+  user: { id: string; name: string; phone: string; email: string | null }
 }
 
 export default function AdminSuppliers() {
@@ -17,6 +17,9 @@ export default function AdminSuppliers() {
   const router = useRouter()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading,   setLoading]   = useState(true)
+  const [confirming, setConfirming] = useState<Supplier | null>(null)
+  const [deleteUser, setDeleteUser] = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
 
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
@@ -39,10 +42,21 @@ export default function AdminSuppliers() {
     load()
   }
 
-  const deleteSupplier = async (id: string) => {
-    if (!confirm('Delete this supplier?')) return
-    await fetch(`/api/admin/suppliers?id=${id}`, { method: 'DELETE', headers: h })
-    load()
+  const openConfirm = (s: Supplier) => {
+    setConfirming(s)
+    setDeleteUser(false)
+  }
+
+  const confirmDelete = async () => {
+    if (!confirming) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/admin/suppliers?id=${confirming.id}&deleteUser=${deleteUser}`, { method: 'DELETE', headers: h })
+      setConfirming(null)
+      load()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
@@ -81,7 +95,7 @@ export default function AdminSuppliers() {
               >
                 {s.verified ? <><XCircle size={13} /> Revoke</> : <><CheckCircle size={13} /> Approve</>}
               </button>
-              <button onClick={() => deleteSupplier(s.id)} className="text-gray-400 hover:text-red-500 p-1 transition-colors">
+              <button onClick={() => openConfirm(s)} className="text-gray-400 hover:text-red-500 p-1 transition-colors">
                 <Trash2 size={14} />
               </button>
             </div>
@@ -89,6 +103,43 @@ export default function AdminSuppliers() {
         ))}
         {suppliers.length === 0 && <p className="text-gray-400 text-center py-8">No suppliers yet.</p>}
       </div>
+
+      {confirming && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-sm w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h3 className="font-bold text-gray-900">Delete supplier</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              This will permanently remove <span className="font-semibold">{confirming.name}</span>'s listing, prices, reviews, and delivery areas. This can't be undone.
+            </p>
+
+            <label className="flex items-start gap-2 text-sm bg-red-50 border border-red-200 rounded-lg p-3 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={deleteUser}
+                onChange={e => setDeleteUser(e.target.checked)}
+              />
+              <span className="text-gray-700">
+                Also delete the linked login account
+                <span className="block text-xs text-gray-500 mt-0.5">
+                  {confirming.user.name} ({confirming.user.phone}) — they won't be able to sign in afterwards.
+                </span>
+              </span>
+            </label>
+
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} disabled={deleting} className="btn-primary bg-red-600 hover:bg-red-700 border-red-600">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                {deleteUser ? 'Delete supplier & account' : 'Delete supplier'}
+              </button>
+              <button onClick={() => setConfirming(null)} disabled={deleting} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     requireAuth(req, ['ADMIN'])
     const suppliers = await prisma.supplier.findMany({
-      include: { user: { select: { name: true, phone: true, email: true } }, prices: true },
+      include: { user: { select: { id: true, name: true, phone: true, email: true } }, prices: true },
       orderBy: { createdAt: 'desc' },
     })
     return ok(suppliers)
@@ -40,9 +40,19 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
     if (!id) return err('id required')
+    const deleteUser = searchParams.get('deleteUser') === 'true'
+
+    const supplier = await prisma.supplier.findUnique({ where: { id }, select: { userId: true } })
+    if (!supplier) return err('Not found', 404)
 
     await prisma.supplier.delete({ where: { id } })
     await log('DELETE_SUPPLIER', user.id, id)
-    return ok({ deleted: true })
+
+    if (deleteUser && supplier.userId) {
+      await prisma.user.delete({ where: { id: supplier.userId } })
+      await log('DELETE_USER', user.id, supplier.userId)
+    }
+
+    return ok({ deleted: true, userDeleted: deleteUser && !!supplier.userId })
   } catch (e) { return handleError(e) }
 }
