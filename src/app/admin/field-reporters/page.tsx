@@ -3,17 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Loader2, Users, Star, ShieldOff, GitMerge, Trash2 } from 'lucide-react'
+import { Loader2, Users, Star, ShieldOff, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 
 type Reporter = {
   id: string
   name: string
+  phone: string
   rating: number
   notes: string | null
   active: boolean
   createdAt: string
-  phones: string[]
   totalReports: number
   approved: number
   rejected: number
@@ -27,8 +27,6 @@ export default function AdminFieldReportersPage() {
 
   const [reporters, setReporters] = useState<Reporter[]>([])
   const [loading,   setLoading]   = useState(true)
-  const [mergeFrom, setMergeFrom] = useState<string>('')
-  const [mergeInto, setMergeInto] = useState<string>('')
 
   useEffect(() => {
     if (!ready) return
@@ -70,20 +68,8 @@ export default function AdminFieldReportersPage() {
     })
   }
 
-  const doMerge = async () => {
-    if (!mergeFrom || !mergeInto || mergeFrom === mergeInto) return
-    if (!confirm('Merge these two reporter profiles into one? This cannot be undone.')) return
-    await fetch('/api/admin/field-reporters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ intoId: mergeInto, fromId: mergeFrom }),
-    })
-    setMergeFrom(''); setMergeInto('')
-    load()
-  }
-
   const remove = async (id: string) => {
-    if (!confirm('Delete this reporter profile permanently? Their reports will remain but lose the reporter link.')) return
+    if (!confirm('Remove this field-reporter profile? Their account stays intact — this only removes their reporting/rating history designation.')) return
     await fetch(`/api/admin/field-reporters?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
     setReporters(prev => prev.filter(r => r.id !== id))
   }
@@ -99,26 +85,8 @@ export default function AdminFieldReportersPage() {
           <Users size={22} className="text-primary-500" /> Field Reporters
         </h1>
         <p className="text-sm text-gray-400 mt-0.5">
-          Durable identities — a phone number alone isn't reliable since people commonly carry 2 SIMs and change numbers yearly.
+          Each reporter is tied to a real account (web login or WhatsApp-verified phone) — no name-matching or merging, since common name combinations here would make that unsafe.
         </p>
-      </div>
-
-      {/* Merge tool */}
-      <div className="card mb-6 border-amber-200 bg-amber-50/40">
-        <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2"><GitMerge size={16} className="text-amber-600" /> Merge duplicate reporters</h2>
-        <p className="text-xs text-gray-500 mb-3">If the same person shows up twice (e.g. reported once from each of their two phones), merge the duplicate into their main profile. All reports and ratings move to the one you keep.</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <select className="input w-auto" value={mergeFrom} onChange={e => setMergeFrom(e.target.value)}>
-            <option value="">Merge this reporter…</option>
-            {reporters.map(r => <option key={r.id} value={r.id}>{r.name} ({r.phones.join(', ')})</option>)}
-          </select>
-          <span className="text-sm text-gray-500">into</span>
-          <select className="input w-auto" value={mergeInto} onChange={e => setMergeInto(e.target.value)}>
-            <option value="">…this one (kept)</option>
-            {reporters.map(r => <option key={r.id} value={r.id}>{r.name} ({r.phones.join(', ')})</option>)}
-          </select>
-          <button onClick={doMerge} disabled={!mergeFrom || !mergeInto} className="btn-primary text-sm">Merge</button>
-        </div>
       </div>
 
       <div className="space-y-3">
@@ -133,7 +101,7 @@ export default function AdminFieldReportersPage() {
                     <p className="font-bold text-gray-900">{r.name}</p>
                     {!r.active && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-semibold">Blocked</span>}
                   </div>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">{r.phones.join(' · ')}</p>
+                  <p className="text-xs text-gray-400 font-mono mt-0.5">{r.phone}</p>
 
                   <div className="flex items-center gap-4 mt-3 text-sm">
                     <span className="text-gray-600"><strong>{r.totalReports}</strong> reports</span>

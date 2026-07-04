@@ -1,5 +1,5 @@
 import { prisma } from './db'
-import { resolveReporter, lookupReporterName } from './fieldReporter'
+import { getOrCreateReporterForPhone, lookupUserNameByPhone } from './fieldReporter'
 
 const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
 const TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN
@@ -326,13 +326,11 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
         return t(lang, 'Reply with a number from the list.', 'Bindal benn limit ci lëkkël bi.')
       }
       const location = GAMBIA_LOCATIONS[idx]
-      const reporterName = ctx.reporterName ?? (await lookupReporterName(phone)) ?? 'WhatsApp Reporter'
-      const reporter = await resolveReporter(phone, reporterName)
+      const reporterName = ctx.reporterName ?? (await lookupUserNameByPhone(phone)) ?? 'WhatsApp Reporter'
+      const reporter = await getOrCreateReporterForPhone(phone, reporterName)
       await prisma.fieldReport.create({
         data: {
           reporterId: reporter.id,
-          reporterName,
-          reporterPhone: phone,
           materialId: ctx.materialId ?? null,
           materialLabel: ctx.materialLabel,
           price: ctx.price,
@@ -343,10 +341,10 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       const totalCount = await prisma.fieldReport.count({ where: { reporterId: reporter.id } })
       await setSession(phone, 'MENU')
       return t(lang,
-        `✅ *Thank you, ${reporter.name}!* Your price report has been submitted for review.\n\n` +
+        `✅ *Thank you, ${reporter.user.name}!* Your price report has been submitted for review.\n\n` +
         `You've now submitted ${totalCount} price report${totalCount !== 1 ? 's' : ''}.\n\n` +
         `Type *menu* for more options.`,
-        `✅ *Jërëjëf, ${reporter.name}!* Sa xibaar prix yónnee nañu ko ngir xool.\n\n` +
+        `✅ *Jërëjëf, ${reporter.user.name}!* Sa xibaar prix yónnee nañu ko ngir xool.\n\n` +
         `Yónnee nga leegi ${totalCount} xibaar prix.\n\n` +
         `Bindal *menu* ngir yeneen.`
       )
@@ -400,7 +398,7 @@ async function startSupplierInfo(phone: string, lang: Lang): Promise<string> {
 }
 
 async function startReportPrice(phone: string, lang: Lang): Promise<string> {
-  const knownName = await lookupReporterName(phone)
+  const knownName = await lookupUserNameByPhone(phone)
 
   // Returning reporter — skip straight to the category picker, no need to re-ask their name.
   if (knownName) {

@@ -1,14 +1,24 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, FormEvent } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/context'
 import Link from 'next/link'
 import { HardHat, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const { login } = useAuth()
   const router    = useRouter()
+  const params     = useSearchParams()
+  const redirect   = params.get('redirect')
   const [phone,    setPhone]    = useState('')
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState('')
@@ -28,6 +38,7 @@ export default function LoginPage() {
       if (!json.ok) { setError(json.error); return }
 
       login(json.data.token, json.data.user)
+      if (redirect) { router.push(redirect); return }
       const { role } = json.data.user
       router.push(role === 'ADMIN' ? '/admin' : role === 'SUPPLIER' ? '/supplier/dashboard' : '/')
     } catch {
@@ -81,7 +92,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500 mt-4">
             No account?{' '}
-            <Link href="/register" className="text-primary-600 font-medium hover:underline">Register here</Link>
+            <Link href={redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'} className="text-primary-600 font-medium hover:underline">Register here</Link>
           </p>
         </div>
 

@@ -10,31 +10,19 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
 
-    const [reports, leaderboardRaw] = await Promise.all([
-      prisma.fieldReport.findMany({
-        where: status && status !== 'ALL' ? { status } : undefined,
-        include: {
-          material: { select: { name: true } },
-          reporter: { select: { id: true, name: true, rating: true, active: true } },
+    const reports = await prisma.fieldReport.findMany({
+      where: status && status !== 'ALL' ? { status } : undefined,
+      include: {
+        material: { select: { name: true } },
+        reporter: {
+          select: { id: true, rating: true, active: true, user: { select: { name: true, phone: true } } },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 300,
-      }),
-      prisma.fieldReport.groupBy({
-        by: ['reporterPhone', 'reporterName'],
-        _count: { id: true },
-        orderBy: { _count: { id: 'desc' } },
-        take: 20,
-      }),
-    ])
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+    })
 
-    const leaderboard = leaderboardRaw.map(l => ({
-      phone: l.reporterPhone,
-      name: l.reporterName,
-      count: l._count.id,
-    }))
-
-    return ok({ reports, leaderboard })
+    return ok({ reports })
   } catch (e) {
     return handleError(e)
   }

@@ -30,6 +30,7 @@ model User {
   forumThreads       ForumThread[]
   forumReplies       ForumReply[]
   apiKeys            ApiKey[]
+  fieldReporter      FieldReporter?
 }
 
 // ─── Suppliers ────────────────────────────────────────────────────────────────
@@ -470,35 +471,29 @@ model Feedback {
 // number of phones to one reporter; new unrecognized phones create a new
 // reporter until an admin manually merges duplicates they recognize as the
 // same person (see FieldReporter.merge in /api/admin/field-reporters).
+// A field-reporting profile tied 1:1 to a real platform account (User) — not
+// to a name string. Common Gambian first/last name combinations repeat often
+// enough that name-based matching or manual merging would risk conflating two
+// different people, so identity is anchored to an authenticated account
+// instead: phone+password for the web (existing register/login), or the
+// WhatsApp-platform-verified sender phone number for the bot (Meta already
+// confirms SIM ownership when a number registers on WhatsApp).
 model FieldReporter {
   id         String   @id @default(cuid())
-  name       String
+  userId     String   @unique
   rating     Float    @default(0)     // internal quality rating, admin-set (0-5)
   notes      String?                  // admin notes on this reporter
   active     Boolean  @default(true)  // false = blocked from future rewards
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  phones  FieldReporterPhone[]
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   reports FieldReport[]
-}
-
-model FieldReporterPhone {
-  id         String   @id @default(cuid())
-  phone      String   @unique
-  reporterId String
-  createdAt  DateTime @default(now())
-
-  reporter FieldReporter @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-
-  @@index([reporterId])
 }
 
 model FieldReport {
   id            String   @id @default(cuid())
-  reporterId    String?               // canonical identity — see FieldReporter above
-  reporterName  String?               // name as typed at submission time (kept even if reporter is later renamed)
-  reporterPhone String                // phone as used at submission time (kept even if later merged to another number)
+  reporterId    String                // canonical identity — see FieldReporter above
   materialId    String?
   materialLabel String   // human-readable label shown/typed at submission time (kept even if materialId is set, for review context)
   price         Float
@@ -510,11 +505,10 @@ model FieldReport {
   rewardNote    String?  // admin note on reward given, e.g. "D50 airtime sent 2026-07-05"
   createdAt     DateTime @default(now())
 
-  material Material?      @relation(fields: [materialId], references: [id], onDelete: SetNull)
-  reporter FieldReporter? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+  material Material?     @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  reporter FieldReporter @relation(fields: [reporterId], references: [id], onDelete: Cascade)
 
   @@index([status])
-  @@index([reporterPhone])
   @@index([reporterId])
   @@index([createdAt])
 }

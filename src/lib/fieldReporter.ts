@@ -1,46 +1,56 @@
 import { prisma } from './db'
+import { hashPassword } from './auth'
+import crypto from 'crypto'
 
 /**
- * Resolves a phone number to a durable FieldReporter identity.
- * - If the phone is already linked to a reporter, returns that reporter
- *   (ignores whatever name was typed this time — the canonical name only
- *   changes via admin edit, not a random re-submission).
- * - If the phone is new, creates a fresh FieldReporter + link.
- *
- * Duplicate people using a second/new phone number show up as a second
- * reporter until an admin notices and merges them — see mergeReporters().
+ * Ensures a FieldReporter profile exists for an already-authenticated User
+ * (web submissions — identity comes from a real logged-in account, not a
+ * typed name/phone, so there's no duplicate-name ambiguity to resolve).
  */
-export async function resolveReporter(phone: string, name: string) {
-  const existingLink = await prisma.fieldReporterPhone.findUnique({
-    where: { phone },
-    include: { reporter: true },
-  })
-  if (existingLink) return existingLink.reporter
+export async function getOrCreateReporterForUser(userId: string) {
+  const existing = await prisma.fieldReporter.findUnique({ where: { userId }, include: { user: true } })
+  if (existing) return existing
 
-  const reporter = await prisma.fieldReporter.create({
-    data: {
-      name,
-      phones: { create: { phone } },
-    },
+  return prisma.fieldReporter.create({
+    data: { userId },
+    include: { user: true },
   })
-  return reporter
 }
 
-/** Look up a reporter's known name by phone, for prefill purposes (no creation). */
-export async function lookupReporterName(phone: string): Promise<string | null> {
-  const link = await prisma.fieldReporterPhone.findUnique({
-    where: { phone },
-    include: { reporter: true },
+/**
+ * WhatsApp channel: the sender's phone number is verified by the WhatsApp
+ * platform itself (Meta confirms SIM ownership at WhatsApp registration), so
+ * it doubles as a legitimate account identifier without requiring a typed
+ * password. Finds or creates a User for this phone, then ensures a linked
+ * FieldReporter profile. A random unusable password is set — this account
+ * exists to hold identity/history, not for password-based web login (that
+ * would require a separate password-set step, not built yet).
+ */
+export async function getOrCreateReporterForPhone(phone: string, name: string) {
+  let user = await prisma.user.findUnique({ where: { phone } })
+  if (!user) {
+    const randomPassword = crypto.randomBytes(24).toString('hex')
+    user = await prisma.user.create({
+      data: {
+        name: name.slice(0, 100),
+        phone,
+        password: await hashPassword(randomPassword),
+        role: 'USER',
+      },
+    })
+  }
+
+  const existing = await prisma.fieldReporter.findUnique({ where: { userId: user.id }, include: { user: true } })
+  if (existing) return existing
+
+  return prisma.fieldReporter.create({
+    data: { userId: user.id },
+    include: { user: true },
   })
-  return link?.reporter.name ?? null
 }
 
-/** Merge `fromId` into `intoId`: moves all phones + reports, deletes the duplicate. */
-export async function mergeReporters(intoId: string, fromId: string) {
-  if (intoId === fromId) throw new Error('Cannot merge a reporter into itself')
-  await prisma.$transaction([
-    prisma.fieldReporterPhone.updateMany({ where: { reporterId: fromId }, data: { reporterId: intoId } }),
-    prisma.fieldReport.updateMany({ where: { reporterId: fromId }, data: { reporterId: intoId } }),
-    prisma.fieldReporter.delete({ where: { id: fromId } }),
-  ])
+/** Look up a known WhatsApp reporter's name by phone, for the "welcome back" recognition (no creation). */
+export async function lookupUserNameByPhone(phone: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({ where: { phone }, select: { name: true } })
+  return user?.name ?? null
 }

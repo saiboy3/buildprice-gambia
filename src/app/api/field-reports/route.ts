@@ -1,17 +1,20 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/auth'
 import { ok, err, handleError } from '@/lib/api'
 import { isRateLimited, getClientIp } from '@/lib/rateLimit'
-import { resolveReporter } from '@/lib/fieldReporter'
-
-const PHONE_RE = /^\+?\d{7,15}$/
+import { getOrCreateReporterForUser } from '@/lib/fieldReporter'
 
 export async function POST(req: NextRequest) {
   try {
-    const { reporterName, reporterPhone, materialId, materialLabel, price, unit, location, supplierName, photoNote } = await req.json()
+    // Identity comes from the authenticated account, not client-supplied
+    // name/phone — common Gambian name combinations repeat often enough that
+    // typed-in identity would be ambiguous, and a real account can't be
+    // impersonated the way a typed phone number can.
+    const authUser = requireAuth(req)
 
-    if (!reporterPhone || !PHONE_RE.test(reporterPhone)) return err('A valid phone number is required')
-    if (!reporterName || typeof reporterName !== 'string' || !reporterName.trim()) return err('Your name is required')
+    const { materialId, materialLabel, price, unit, location, supplierName, photoNote } = await req.json()
+
     if (!materialLabel || typeof materialLabel !== 'string') return err('Material is required')
     if (typeof price !== 'number' || price <= 0) return err('Enter a valid price')
     if (!unit || typeof unit !== 'string') return err('Unit is required')
@@ -19,20 +22,17 @@ export async function POST(req: NextRequest) {
 
     // Generous but bounded — legitimate field reporters may submit many entries a day.
     const ip = getClientIp(req)
-    const [phoneLimited, ipLimited] = await Promise.all([
-      isRateLimited(`field-report:phone:${reporterPhone}`, 50, 24 * 60 * 60 * 1000),
+    const [userLimited, ipLimited] = await Promise.all([
+      isRateLimited(`field-report:user:${authUser.id}`, 50, 24 * 60 * 60 * 1000),
       isRateLimited(`field-report:ip:${ip}`, 100, 60 * 60 * 1000),
     ])
-    if (phoneLimited || ipLimited) return err('Submission limit reached. Please try again later.', 429)
+    if (userLimited || ipLimited) return err('Submission limit reached. Please try again later.', 429)
 
-    const phone = reporterPhone.trim()
-    const reporter = await resolveReporter(phone, reporterName.trim().slice(0, 100))
+    const reporter = await getOrCreateReporterForUser(authUser.id)
 
     await prisma.fieldReport.create({
       data: {
         reporterId: reporter.id,
-        reporterName: reporterName.trim().slice(0, 100),
-        reporterPhone: phone,
         materialId: typeof materialId === 'string' ? materialId : null,
         materialLabel: materialLabel.slice(0, 100),
         price,
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const totalCount = await prisma.fieldReport.count({ where: { reporterId: reporter.id } })
 
-    return ok({ totalCount, reporterName: reporter.name }, 201)
+    return ok({ totalCount, reporterName: reporter.user.name }, 201)
   } catch (e) {
     return handleError(e)
   }

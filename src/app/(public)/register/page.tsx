@@ -1,14 +1,24 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, FormEvent } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/context'
 import Link from 'next/link'
 import { HardHat, Loader2 } from 'lucide-react'
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  )
+}
+
+function RegisterForm() {
   const { login } = useAuth()
   const router    = useRouter()
+  const params    = useSearchParams()
+  const redirect  = params.get('redirect')
   const [name,     setName]     = useState('')
   const [phone,    setPhone]    = useState('')
   const [email,    setEmail]    = useState('')
@@ -31,6 +41,7 @@ export default function RegisterPage() {
       if (!json.ok) { setError(json.error); return }
 
       login(json.data.token, json.data.user)
+      if (redirect) { router.push(redirect); return }
       router.push(role === 'SUPPLIER' ? '/supplier/dashboard' : '/')
     } catch {
       setError('Something went wrong. Please try again.')
@@ -84,7 +95,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary-600 font-medium hover:underline">Sign in</Link>
+            <Link href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'} className="text-primary-600 font-medium hover:underline">Sign in</Link>
           </p>
         </div>
       </div>

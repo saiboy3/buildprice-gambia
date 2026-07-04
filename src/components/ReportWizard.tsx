@@ -3,28 +3,27 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useT, useLang } from '@/lib/LanguageContext'
+import { useAuth } from '@/lib/context'
 import { GAMBIA_LOCATIONS, getUserLocation } from '@/lib/location'
 import { getCategoryMeta } from '@/lib/visual'
-import { CheckCircle2, ChevronLeft, Loader2, MapPin } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, Loader2, MapPin, LogIn } from 'lucide-react'
 
 type MaterialOption = { id: string; name: string; categoryName: string }
 
 const UNITS = ['Bag', 'Block', 'Sheet', 'Ton', 'm³', 'm²', 'Piece', 'Roll']
 
-const TOTAL_STEPS = 6
+const TOTAL_STEPS = 5
 
 export default function ReportWizard() {
   const tr = useT()
   const { locale } = useLang()
   const isRTL = locale === 'ar'
+  const { user, token, ready } = useAuth()
 
   const [step, setStep] = useState(1)
 
   // Data
   const [materials, setMaterials]   = useState<MaterialOption[]>([])
-  const [phone,     setPhone]       = useState('')
-  const [name,      setName]        = useState('')
-  const [knownReporter, setKnownReporter] = useState(false)
   const [materialId, setMaterialId] = useState<string | null>(null)
   const [materialLabel, setMaterialLabel] = useState('')
   const [otherMaterial, setOtherMaterial] = useState('')
@@ -54,30 +53,12 @@ export default function ReportWizard() {
   const finalUnit = unit === 'Other' ? otherUnit : unit
   const finalMaterialLabel = materialId ? materialLabel : otherMaterial
 
-  // Look up whether this phone belongs to a known reporter, so returning
-  // reporters don't have to retype their name every time.
-  useEffect(() => {
-    const trimmed = phone.trim()
-    if (!/^\+?\d{7,15}$/.test(trimmed)) { setKnownReporter(false); return }
-    const timeout = setTimeout(() => {
-      fetch(`/api/reporters/lookup?phone=${encodeURIComponent(trimmed)}`)
-        .then(r => r.json())
-        .then(j => {
-          if (j.ok && j.data.name) { setName(j.data.name); setKnownReporter(true) }
-          else setKnownReporter(false)
-        })
-        .catch(() => {})
-    }, 500)
-    return () => clearTimeout(timeout)
-  }, [phone])
-
   const canProceed = (() => {
     switch (step) {
-      case 1: return /^\+?\d{7,15}$/.test(phone.trim()) && name.trim().length >= 2
-      case 2: return !!finalMaterialLabel.trim()
-      case 3: return !!price && Number(price) > 0 && !!finalUnit.trim()
-      case 4: return !!location
-      case 5: return true // extra details are optional
+      case 1: return !!finalMaterialLabel.trim()
+      case 2: return !!price && Number(price) > 0 && !!finalUnit.trim()
+      case 3: return !!location
+      case 4: return true // extra details are optional
       default: return true
     }
   })()
@@ -91,10 +72,8 @@ export default function ReportWizard() {
     try {
       const res = await fetch('/api/field-reports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          reporterName: name.trim(),
-          reporterPhone: phone.trim(),
           materialId,
           materialLabel: finalMaterialLabel,
           price: Number(price),
@@ -119,13 +98,36 @@ export default function ReportWizard() {
     setMaterialId(null); setMaterialLabel(''); setOtherMaterial('')
     setPrice(''); setUnit(''); setOtherUnit('')
     setSupplierName(''); setNote(''); setError('')
-    setStep(2)
+    setStep(1)
   }
 
   const bigBtn = (selected: boolean) =>
     `flex items-center justify-center text-center gap-2 rounded-2xl border-2 px-4 py-5 text-base font-semibold transition-colors ${
       selected ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300'
     }`
+
+  // Wait for auth state to load before deciding whether to show a login gate.
+  if (!ready) return null
+
+  if (!user) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
+        <h1 className="text-2xl font-bold text-gray-900 font-display mb-2">{tr('report.title')}</h1>
+        <p className="text-sm text-gray-500 mb-8">{tr('report.subtitle')}</p>
+        <div className="card">
+          <LogIn size={32} className="mx-auto text-primary-500 mb-3" />
+          <h2 className="font-bold text-gray-900 mb-1">Sign in to report a price</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Reports are tied to your account so we know who to reward and can keep quality ratings — takes a minute to set up.
+          </p>
+          <div className="flex gap-2">
+            <Link href="/login?redirect=/report" className="btn-secondary flex-1 justify-center py-3">Sign in</Link>
+            <Link href="/register?redirect=/report" className="btn-primary flex-1 justify-center py-3">Create account</Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -144,39 +146,8 @@ export default function ReportWizard() {
       )}
 
       <div className="card min-h-[320px] flex flex-col">
-        {/* Step 1 — phone */}
+        {/* Step 1 — material */}
         {step === 1 && (
-          <div className="flex-1 flex flex-col gap-4">
-            <label className="text-lg font-bold text-gray-900">{tr('report.step.phone.label')}</label>
-            <p className="text-sm text-gray-500 -mt-2">{tr('report.step.phone.hint')}</p>
-            <input
-              type="tel"
-              inputMode="numeric"
-              className="input text-xl py-4 text-center tracking-wide"
-              placeholder={tr('report.step.phone.placeholder')}
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              autoFocus
-            />
-            <div className="mt-2">
-              <label className="text-sm font-medium text-gray-600 mb-1 block">{tr('report.step.name.label')}</label>
-              <input
-                type="text"
-                className="input py-3"
-                placeholder={tr('report.step.name.placeholder')}
-                value={name}
-                onChange={e => { setName(e.target.value); setKnownReporter(false) }}
-                required
-              />
-              {knownReporter && (
-                <p className="text-xs text-primary-600 mt-1.5">{tr('report.step.name.welcomeBack')}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2 — material */}
-        {step === 2 && (
           <div className="flex-1 flex flex-col gap-4">
             <h2 className="text-lg font-bold text-gray-900">{tr('report.step.material.title')}</h2>
             <div className="grid grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
@@ -217,8 +188,8 @@ export default function ReportWizard() {
           </div>
         )}
 
-        {/* Step 3 — price + unit */}
-        {step === 3 && (
+        {/* Step 2 — price + unit */}
+        {step === 2 && (
           <div className="flex-1 flex flex-col gap-4">
             <h2 className="text-lg font-bold text-gray-900">{tr('report.step.price.title')}</h2>
             <div className="flex items-center gap-2">
@@ -256,8 +227,8 @@ export default function ReportWizard() {
           </div>
         )}
 
-        {/* Step 4 — location */}
-        {step === 4 && (
+        {/* Step 3 — location */}
+        {step === 3 && (
           <div className="flex-1 flex flex-col gap-4">
             <h2 className="text-lg font-bold text-gray-900">{tr('report.step.location.title')}</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -270,8 +241,8 @@ export default function ReportWizard() {
           </div>
         )}
 
-        {/* Step 5 — extra (optional) */}
-        {step === 5 && (
+        {/* Step 4 — extra (optional) */}
+        {step === 4 && (
           <div className="flex-1 flex flex-col gap-4">
             <h2 className="text-lg font-bold text-gray-900">{tr('report.step.extra.title')}</h2>
             <div>
@@ -285,8 +256,8 @@ export default function ReportWizard() {
           </div>
         )}
 
-        {/* Step 6 — review */}
-        {step === 6 && (
+        {/* Step 5 — review */}
+        {step === 5 && (
           <div className="flex-1 flex flex-col gap-4">
             <h2 className="text-lg font-bold text-gray-900">{tr('report.step.review.title')}</h2>
             <div className="space-y-3 text-sm">
