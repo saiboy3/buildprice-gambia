@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Loader2, Users, Star, ShieldOff, GitMerge } from 'lucide-react'
+import { Loader2, Users, Star, ShieldOff, GitMerge, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 
 type Reporter = {
@@ -82,6 +82,12 @@ export default function AdminFieldReportersPage() {
     load()
   }
 
+  const remove = async (id: string) => {
+    if (!confirm('Delete this reporter profile permanently? Their reports will remain but lose the reporter link.')) return
+    await fetch(`/api/admin/field-reporters?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    setReporters(prev => prev.filter(r => r.id !== id))
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
   )
@@ -156,13 +162,18 @@ export default function AdminFieldReportersPage() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    onClick={() => toggleActive(r.id, !r.active)}
-                    className={clsx('flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors',
-                      r.active ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50')}
-                  >
-                    <ShieldOff size={13} /> {r.active ? 'Block' : 'Unblock'}
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => toggleActive(r.id, !r.active)}
+                      className={clsx('flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors',
+                        r.active ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50')}
+                    >
+                      <ShieldOff size={13} /> {r.active ? 'Block' : 'Unblock'}
+                    </button>
+                    <button onClick={() => remove(r.id)} className="text-gray-400 hover:text-red-500 p-1.5">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

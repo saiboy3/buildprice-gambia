@@ -82,3 +82,16 @@ export async function POST(req: NextRequest) {
     return handleError(e)
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    requireAuth(req, ['ADMIN'])
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
+    if (!id) return err('id is required')
+    await prisma.fieldReporter.delete({ where: { id } })
+    return ok({ deleted: true })
+  } catch (e) {
+    return handleError(e)
+  }
+}
