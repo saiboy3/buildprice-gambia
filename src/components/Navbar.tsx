@@ -44,7 +44,7 @@ export default function Navbar() {
       : 'relative text-gray-600 hover:text-primary-600 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary-500 after:transition-all hover:after:w-full'
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-white/20 shadow-sm" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <nav className="sticky top-0 z-[60] glass border-b border-white/20 shadow-sm" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary-600 shrink-0">
