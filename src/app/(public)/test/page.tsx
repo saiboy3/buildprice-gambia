@@ -203,6 +203,8 @@ export default async function TestPage() {
             { key: 'WHATSAPP_APP_SECRET', status: 'for-whatsapp', note: 'Meta App Dashboard → Settings → Basic. Verifies incoming webhook signatures.' },
             { key: 'NEXT_PUBLIC_SENTRY_DSN', status: 'for-monitoring', note: 'sentry.io → create a Next.js project → copy DSN. Catches client-side errors.' },
             { key: 'SENTRY_DSN', status: 'for-monitoring', note: 'Same DSN as above — used for server/edge error reporting.' },
+            { key: 'UPSTASH_REDIS_REST_URL', status: 'for-performance', note: 'Vercel Marketplace → Upstash → Install (auto-injects this + the token below).' },
+            { key: 'UPSTASH_REDIS_REST_TOKEN', status: 'for-performance', note: 'Speeds up rate limiting — falls back to DB-based limiting if unset.' },
             { key: 'NEXT_PUBLIC_APP_URL', status: 'optional', note: 'https://buildprice-gambia.vercel.app' },
           ].map(v => (
             <div key={v.key} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50">
@@ -211,9 +213,10 @@ export default async function TestPage() {
                 v.status === 'required' ? 'bg-red-100 text-red-700' :
                 v.status === 'for-whatsapp' ? 'bg-green-100 text-green-700' :
                 v.status === 'for-monitoring' ? 'bg-purple-100 text-purple-700' :
+                v.status === 'for-performance' ? 'bg-blue-100 text-blue-700' :
                 'bg-gray-100 text-gray-500'
               }`}>
-                {v.status === 'required' ? 'Required' : v.status === 'for-whatsapp' ? 'WhatsApp' : v.status === 'for-monitoring' ? 'Monitoring' : 'Optional'}
+                {v.status === 'required' ? 'Required' : v.status === 'for-whatsapp' ? 'WhatsApp' : v.status === 'for-monitoring' ? 'Monitoring' : v.status === 'for-performance' ? 'Performance' : 'Optional'}
               </span>
               <span className="text-xs text-gray-500">{v.note}</span>
             </div>

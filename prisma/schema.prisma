@@ -557,3 +557,17 @@ model Estimate {
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
+
+// ─── WhatsApp Bot Session (stateful guided-menu flows) ────────────────────────
+
+model WhatsAppSession {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  state     String   @default("MENU") // MENU | AWAIT_* flow steps — see src/lib/whatsapp.ts
+  context   String   @default("{}")   // JSON blob of partial flow data
+  language  String   @default("en")   // en | wo
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
