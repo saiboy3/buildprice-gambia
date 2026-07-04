@@ -1,0 +1,161 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/lib/context'
+import { useRouter } from 'next/navigation'
+import { Loader2, MapPinned, Trash2, Trophy } from 'lucide-react'
+import clsx from 'clsx'
+
+type FieldReport = {
+  id: string
+  reporterName: string | null
+  reporterPhone: string
+  materialLabel: string
+  material: { name: string } | null
+  price: number
+  unit: string
+  location: string
+  supplierName: string | null
+  photoNote: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  rewardNote: string | null
+  createdAt: string
+}
+
+type LeaderboardEntry = { phone: string; name: string | null; count: number }
+
+const STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const
+
+export default function AdminFieldReportsPage() {
+  const { isAdmin, token, ready } = useAuth()
+  const router = useRouter()
+
+  const [reports,     setReports]     = useState<FieldReport[]>([])
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [filter,      setFilter]      = useState<'ALL' | typeof STATUSES[number]>('PENDING')
+
+  useEffect(() => {
+    if (!ready) return
+    if (!isAdmin) { router.push('/login'); return }
+    load()
+  }, [ready, isAdmin, filter])
+
+  const load = async () => {
+    setLoading(true)
+    const res  = await fetch(`/api/admin/field-reports?status=${filter}`, { headers: { Authorization: `Bearer ${token}` } })
+    const json = await res.json()
+    if (json.ok) { setReports(json.data.reports); setLeaderboard(json.data.leaderboard) }
+    setLoading(false)
+  }
+
+  const setStatus = async (id: string, status: string) => {
+    setReports(prev => prev.map(r => r.id === id ? { ...r, status: status as FieldReport['status'] } : r))
+    await fetch('/api/admin/field-reports', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, status }),
+    })
+  }
+
+  const remove = async (id: string) => {
+    if (!confirm('Delete this report permanently?')) return
+    await fetch(`/api/admin/field-reports?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    setReports(prev => prev.filter(r => r.id !== id))
+  }
+
+  const statusBadge = (s: string) =>
+    s === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+    s === 'APPROVED' ? 'bg-green-100 text-green-700' :
+    'bg-red-100 text-red-700'
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
+  )
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <MapPinned size={22} className="text-primary-500" /> Field Price Reports
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">Crowd-sourced submissions from field reporters</p>
+        </div>
+        <div className="flex gap-2">
+          {(['ALL', ...STATUSES] as const).map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={clsx('px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                filter === s ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>
+              {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Reports list */}
+        <div className="lg:col-span-2 space-y-3">
+          {reports.length === 0 ? (
+            <div className="card text-center py-12 text-gray-400">No reports in this view.</div>
+          ) : (
+            reports.map(r => (
+              <div key={r.id} className={clsx('card', r.status === 'REJECTED' && 'opacity-60')}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className={clsx('text-xs font-bold px-2 py-0.5 rounded-full', statusBadge(r.status))}>{r.status}</span>
+                      <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p className="font-bold text-gray-900">{r.materialLabel}{r.material && <span className="text-xs text-gray-400 font-normal ml-1">(matched: {r.material.name})</span>}</p>
+                    <p className="text-lg font-extrabold text-primary-600">D{r.price.toLocaleString()} <span className="text-sm font-normal text-gray-400">/ {r.unit}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">{r.location}{r.supplierName ? ` · ${r.supplierName}` : ''}</p>
+                    {r.photoNote && <p className="text-xs text-gray-400 mt-1 italic">"{r.photoNote}"</p>}
+                    <p className="text-xs text-gray-400 mt-2">
+                      Reporter: {r.reporterName || 'Anonymous'} · {r.reporterPhone}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <select
+                      className="text-xs border border-gray-200 rounded-lg px-2 py-1.5"
+                      value={r.status}
+                      onChange={e => setStatus(r.id, e.target.value)}
+                    >
+                      {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
+                    </select>
+                    <button onClick={() => remove(r.id)} className="text-gray-400 hover:text-red-500">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Leaderboard for reward tracking */}
+        <div className="card h-fit">
+          <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Trophy size={16} className="text-amber-500" /> Top Reporters</h2>
+          {leaderboard.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-6">No submissions yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.map((l, i) => (
+                <div key={l.phone} className="flex items-center justify-between text-sm">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 truncate">{i + 1}. {l.name || 'Anonymous'}</p>
+                    <p className="text-xs text-gray-400 font-mono">{l.phone}</p>
+                  </div>
+                  <span className="text-xs font-bold bg-primary-50 text-primary-700 px-2 py-1 rounded-full shrink-0">{l.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
+            Use this list to manually send airtime/rewards — no automated payout is wired up yet.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}

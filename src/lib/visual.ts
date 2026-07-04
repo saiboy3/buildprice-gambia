@@ -43,6 +43,12 @@ export const CATEGORY_META: CategoryMeta[] = [
   { label: 'Paint & Finishing', color: 'bg-purple-50',   text: 'text-purple-800', border: 'border-purple-200', image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=120&h=120&fit=crop&q=80', query: 'paint' },
 ]
 
+/** Best-effort match of a category/material name to its visual metadata. */
+export function getCategoryMeta(catName: string): CategoryMeta {
+  return CATEGORY_META.find(c => catName.toLowerCase().includes(c.query) || c.label.toLowerCase().includes(catName.toLowerCase()))
+    ?? CATEGORY_META[0]
+}
+
 export const SPECIALTY_META: Record<string, { color: string; text: string; image: string }> = {
   'General Contractor':    { color: 'bg-primary-50',  text: 'text-primary-700',  image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=80' },
   'Masonry & Blockwork':   { color: 'bg-slate-100',   text: 'text-slate-700',    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=80&h=80&fit=crop&q=80' },

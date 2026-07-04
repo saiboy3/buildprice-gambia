@@ -88,6 +88,7 @@ model Material {
   fraudAlerts   FraudAlert[]
   priceIndexes  PriceIndex[]
   guides        MaterialGuide[]
+  fieldReports  FieldReport[]
 }
 
 model Price {
@@ -458,6 +459,30 @@ model Feedback {
   createdAt DateTime @default(now())
 
   @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Field Price Reports (crowd-sourced, incentivized) ────────────────────────
+
+model FieldReport {
+  id            String   @id @default(cuid())
+  reporterName  String?
+  reporterPhone String
+  materialId    String?
+  materialLabel String   // human-readable label shown/typed at submission time (kept even if materialId is set, for review context)
+  price         Float
+  unit          String
+  location      String
+  supplierName  String?  // free-text: the shop/seller they saw the price at (not a platform Supplier account)
+  photoNote     String?  // optional free-text description in lieu of a photo (v1 has no image upload)
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  rewardNote    String?  // admin note on reward given, e.g. "D50 airtime sent 2026-07-05"
+  createdAt     DateTime @default(now())
+
+  material Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([reporterPhone])
   @@index([createdAt])
 }
 

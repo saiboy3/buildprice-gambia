@@ -7,7 +7,7 @@ import { useState } from 'react'
 import {
   Menu, X, HardHat, LogOut, LayoutDashboard, Bell,
   Map, MessageSquare, BookOpen, FileText, BarChart2, Key, Hammer,
-  ChevronDown,
+  ChevronDown, MapPinned,
 } from 'lucide-react'
 import LanguageToggle from '@/components/LanguageToggle'
 import LocationPicker from '@/components/LocationPicker'
@@ -34,6 +34,7 @@ export default function Navbar() {
     { href: '/forum',  label: tr('nav.forum'),      icon: MessageSquare },
     { href: '/guides', label: tr('nav.guides'),     icon: BookOpen },
     { href: '/rfq',    label: tr('nav.getQuotes'),  icon: FileText },
+    { href: '/report', label: tr('nav.reportPrice'), icon: MapPinned },
   ]
   const resourcesActive = resourceLinks.some(l => pathname === l.href || pathname.startsWith(l.href + '/'))
 
