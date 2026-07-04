@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import Link from 'next/link'
-import { Star, Users, Briefcase, Phone, MapPin, ShieldCheck, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Star, Users, Briefcase, Phone, MapPin, ShieldCheck, Loader2, CheckCircle, XCircle, Pencil, HardHat } from 'lucide-react'
 import clsx from 'clsx'
 
 type Lead = {
@@ -34,28 +34,27 @@ export default function ContractorDashboard() {
   const [loading,  setLoading]  = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
 
-  const contractorId = user?.contractorId
-
   const load = async () => {
-    if (!contractorId) return
     setLoading(true)
     try {
-      const [profRes, leadsRes] = await Promise.all([
-        fetch(`/api/contractors/${contractorId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`/api/contractors/${contractorId}/leads`, { headers: { Authorization: `Bearer ${token}` } }),
-      ])
-      const profJson  = await profRes.json()
-      const leadsJson = await leadsRes.json()
-      if (profJson.ok)  setProfile(profJson.data)
-      if (leadsJson.ok) setLeads(leadsJson.data)
+      const profRes  = await fetch('/api/contractor/profile', { headers: { Authorization: `Bearer ${token}` } })
+      const profJson = await profRes.json()
+      if (profJson.ok) setProfile(profJson.data)
+
+      if (profJson.ok && profJson.data) {
+        const leadsRes  = await fetch(`/api/contractors/${profJson.data.id}/leads`, { headers: { Authorization: `Bearer ${token}` } })
+        const leadsJson = await leadsRes.json()
+        if (leadsJson.ok) setLeads(leadsJson.data)
+      }
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [contractorId])
+  useEffect(() => { if (token) load() }, [token])
 
   const updateLeadStatus = async (leadId: string, status: string) => {
+    if (!profile) return
     setUpdating(leadId)
-    await fetch(`/api/contractors/${contractorId}/leads?id=${leadId}`, {
+    await fetch(`/api/contractors/${profile.id}/leads?id=${leadId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status }),
@@ -70,6 +69,24 @@ export default function ContractorDashboard() {
     </div>
   )
 
+  // No contractor profile yet — this is the entry point into the guided setup wizard.
+  if (!profile) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <div className="card">
+          <HardHat size={32} className="mx-auto text-primary-500 mb-3" />
+          <h2 className="font-bold text-gray-900 mb-1">Set up your contractor profile</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Clients can't find or contact you yet — it takes about two minutes to get listed.
+          </p>
+          <Link href="/contractors/register" className="btn-primary w-full justify-center py-3">
+            Set Up My Profile
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   const totalLeads = leads.length
   const newLeads   = leads.filter(l => l.status === 'NEW').length
 
@@ -78,35 +95,38 @@ export default function ContractorDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Contractor Dashboard</h1>
 
       {/* Profile card */}
-      {profile && (
-        <div className="card mb-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-gray-900">{profile.name}</h2>
-                {profile.verified && (
-                  <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                    <ShieldCheck size={12} /> Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-1">
-                <span className="flex items-center gap-1"><MapPin size={13} /> {profile.location}</span>
-                <span className="flex items-center gap-1"><Phone size={13} /> {profile.contact}</span>
-                <span className="flex items-center gap-1">
-                  <Star size={13} className="text-amber-400 fill-amber-400" />
-                  {profile.avgRating > 0 ? profile.avgRating.toFixed(1) : '—'}
-                  <span className="text-gray-400">({profile.reviewCount} reviews)</span>
+      <div className="card mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-lg font-bold text-gray-900">{profile.name}</h2>
+              {profile.verified && (
+                <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                  <ShieldCheck size={12} /> Verified
                 </span>
-              </div>
-              {profile.bio && <p className="text-sm text-gray-500 mt-2">{profile.bio}</p>}
+              )}
             </div>
-            <Link href={`/contractors/${contractorId}`} className="btn-secondary text-sm">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mt-1">
+              <span className="flex items-center gap-1"><MapPin size={13} /> {profile.location}</span>
+              <span className="flex items-center gap-1"><Phone size={13} /> {profile.contact}</span>
+              <span className="flex items-center gap-1">
+                <Star size={13} className="text-amber-400 fill-amber-400" />
+                {profile.avgRating > 0 ? profile.avgRating.toFixed(1) : '—'}
+                <span className="text-gray-400">({profile.reviewCount} reviews)</span>
+              </span>
+            </div>
+            {profile.bio && <p className="text-sm text-gray-500 mt-2">{profile.bio}</p>}
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+            <Link href={`/contractors/${profile.id}`} className="btn-secondary text-sm">
               View public profile →
+            </Link>
+            <Link href="/contractors/register" className="text-sm text-primary-600 hover:underline flex items-center gap-1 justify-center">
+              <Pencil size={12} /> Edit profile
             </Link>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

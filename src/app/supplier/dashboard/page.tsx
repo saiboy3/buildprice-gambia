@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, MessageSquare, Package, TrendingUp, Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Eye, MessageSquare, Package, TrendingUp, Plus, Pencil, Trash2, Loader2, Store } from 'lucide-react'
 import clsx from 'clsx'
 
 type Price = {
@@ -17,6 +17,7 @@ type Price = {
 }
 
 type Material = { id: string; name: string; category: { name: string } }
+type SupplierProfile = { id: string; name: string; location: string; contact: string; views: number; inquiries: number }
 
 const STATUS_OPTIONS = ['AVAILABLE', 'LIMITED', 'OUT_OF_STOCK']
 
@@ -24,9 +25,9 @@ export default function SupplierDashboard() {
   const { user, token, isSupplier, ready } = useAuth()
   const router = useRouter()
 
+  const [profile,   setProfile]   = useState<SupplierProfile | null>(null)
   const [prices,    setPrices]    = useState<Price[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
-  const [stats,     setStats]     = useState({ views: 0, inquiries: 0 })
   const [loading,   setLoading]   = useState(true)
   const [showForm,  setShowForm]  = useState(false)
 
@@ -47,6 +48,11 @@ export default function SupplierDashboard() {
   const loadData = async () => {
     setLoading(true)
     try {
+      const profRes  = await fetch('/api/supplier/profile', { headers: { Authorization: `Bearer ${token}` } })
+      const profJson = await profRes.json()
+      if (profJson.ok) setProfile(profJson.data)
+      if (!profJson.ok || !profJson.data) { setLoading(false); return }
+
       const [pricesRes, matsRes] = await Promise.all([
         fetch('/api/supplier/prices', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/materials'),
@@ -55,13 +61,6 @@ export default function SupplierDashboard() {
       const matsJson   = await matsRes.json()
       if (pricesJson.ok) setPrices(pricesJson.data)
       if (matsJson.ok)   setMaterials(matsJson.data)
-
-      // Fetch supplier stats
-      if (user?.supplierId) {
-        const suppRes = await fetch(`/api/suppliers/${user.supplierId}`)
-        const suppJson = await suppRes.json()
-        if (suppJson.ok) setStats({ views: suppJson.data.views, inquiries: suppJson.data.inquiries })
-      }
     } finally {
       setLoading(false)
     }
@@ -105,24 +104,47 @@ export default function SupplierDashboard() {
     <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
   )
 
+  // No supplier profile yet — this is the entry point into the guided setup wizard.
+  if (!profile) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <div className="card">
+          <Store size={32} className="mx-auto text-primary-500 mb-3" />
+          <h2 className="font-bold text-gray-900 mb-1">Set up your business profile</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Buyers can't find your prices yet — it takes about a minute to get listed.
+          </p>
+          <Link href="/supplier/profile" className="btn-primary w-full justify-center py-3">
+            Set Up My Profile
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Supplier Dashboard</h1>
           <p className="text-gray-500 text-sm mt-0.5">Welcome back, {user?.name}</p>
         </div>
-        <button onClick={() => setShowForm(s => !s)} className="btn-primary">
-          <Plus size={16} /> Add / Update Price
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/supplier/profile" className="btn-secondary">
+            <Pencil size={14} /> Edit Profile
+          </Link>
+          <button onClick={() => setShowForm(s => !s)} className="btn-primary">
+            <Plus size={16} /> Add / Update Price
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
           { icon: Package,     label: 'Listed materials', value: prices.length },
-          { icon: Eye,         label: 'Profile views',    value: stats.views },
-          { icon: MessageSquare, label: 'Inquiries',      value: stats.inquiries },
+          { icon: Eye,         label: 'Profile views',    value: profile.views },
+          { icon: MessageSquare, label: 'Inquiries',      value: profile.inquiries },
           { icon: TrendingUp,  label: 'In stock',         value: prices.filter(p => p.stockStatus === 'AVAILABLE').length },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="card text-center">
@@ -228,7 +250,7 @@ export default function SupplierDashboard() {
       </div>
 
       <div className="mt-4 text-center">
-        <Link href={`/suppliers/${user?.supplierId}`} className="text-sm text-primary-600 hover:underline">
+        <Link href={`/suppliers/${profile.id}`} className="text-sm text-primary-600 hover:underline">
           View public profile →
         </Link>
       </div>
