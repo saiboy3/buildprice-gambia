@@ -7,7 +7,12 @@ export async function GET(req: NextRequest) {
   try {
     requireAuth(req, ['ADMIN'])
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, phone: true, email: true, role: true, createdAt: true },
+      select: {
+        id: true, name: true, phone: true, email: true, role: true, createdAt: true,
+        supplier: { select: { id: true, name: true } },
+        contractorProfile: { select: { id: true, name: true } },
+        fieldReporter: { select: { id: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
     return ok(users)

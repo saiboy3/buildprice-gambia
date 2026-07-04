@@ -3,9 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2, AlertTriangle } from 'lucide-react'
 
-type User = { id: string; name: string; phone: string; email: string | null; role: string; createdAt: string }
+type User = {
+  id: string; name: string; phone: string; email: string | null; role: string; createdAt: string
+  supplier: { id: string; name: string } | null
+  contractorProfile: { id: string; name: string } | null
+  fieldReporter: { id: string } | null
+}
 
 export default function AdminUsers() {
   const { isAdmin, token, ready } = useAuth()
@@ -13,6 +18,8 @@ export default function AdminUsers() {
   const [users,   setUsers]   = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
+  const [confirming, setConfirming] = useState<User | null>(null)
+  const [deleting,   setDeleting]   = useState(false)
 
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
@@ -35,10 +42,16 @@ export default function AdminUsers() {
     load()
   }
 
-  const deleteUser = async (id: string) => {
-    if (!confirm('Delete this user?')) return
-    await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE', headers: h })
-    load()
+  const confirmDelete = async () => {
+    if (!confirming) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/admin/users?id=${confirming.id}`, { method: 'DELETE', headers: h })
+      setConfirming(null)
+      load()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const roleBadge = (role: string) =>
@@ -92,7 +105,7 @@ export default function AdminUsers() {
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => deleteUser(u.id)} className="text-gray-400 hover:text-red-500 p-1 transition-colors">
+                  <button onClick={() => setConfirming(u)} className="text-gray-400 hover:text-red-500 p-1 transition-colors">
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -102,6 +115,43 @@ export default function AdminUsers() {
         </table>
         {filtered.length === 0 && <p className="text-gray-400 text-center py-6 text-sm">No users found</p>}
       </div>
+
+      {confirming && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-sm w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h3 className="font-bold text-gray-900">Delete user</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              This permanently deletes <span className="font-semibold">{confirming.name}</span> ({confirming.phone})'s login and:
+            </p>
+            <ul className="text-sm text-gray-600 space-y-1 mb-4 list-disc list-inside">
+              {confirming.supplier && (
+                <li>Deletes their supplier listing <span className="font-medium">"{confirming.supplier.name}"</span> and all its prices/reviews</li>
+              )}
+              {confirming.fieldReporter && (
+                <li>Deletes their field-reporter profile and reporting history</li>
+              )}
+              {confirming.contractorProfile && (
+                <li>Unlinks (but keeps) their contractor listing <span className="font-medium">"{confirming.contractorProfile.name}"</span> — it stays live with no owner account</li>
+              )}
+              {!confirming.supplier && !confirming.fieldReporter && !confirming.contractorProfile && (
+                <li>No linked supplier, contractor, or field-reporter profiles</li>
+              )}
+            </ul>
+            <p className="text-xs text-gray-400 mb-4">This can't be undone.</p>
+
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} disabled={deleting} className="btn-primary bg-red-600 hover:bg-red-700 border-red-600">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete user
+              </button>
+              <button onClick={() => setConfirming(null)} disabled={deleting} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
