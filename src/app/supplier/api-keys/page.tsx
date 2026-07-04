@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Key, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, Copy, Check } from 'lucide-react'
+import { Key, Plus, Trash2, ToggleLeft, ToggleRight, Loader2, Copy, Check, AlertTriangle } from 'lucide-react'
 import clsx from 'clsx'
 
 type ApiKey = {
@@ -25,6 +25,8 @@ export default function ApiKeysPage() {
   const [saving,   setSaving]   = useState(false)
   const [error,    setError]    = useState('')
   const [copied,   setCopied]   = useState<string | null>(null)
+  const [confirming, setConfirming] = useState<ApiKey | null>(null)
+  const [deleting,   setDeleting]   = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -54,21 +56,27 @@ export default function ApiKeysPage() {
   }
 
   const toggleActive = async (id: string, active: boolean) => {
-    await fetch(`/api/api-keys?id=${id}`, {
-      method: 'PATCH',
+    await fetch(`/api/api-keys/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ active: !active }),
     })
     load()
   }
 
-  const deleteKey = async (id: string) => {
-    if (!confirm('Delete this API key? This cannot be undone.')) return
-    await fetch(`/api/api-keys?id=${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    load()
+  const confirmDelete = async () => {
+    if (!confirming) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/api-keys/${confirming.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setConfirming(null)
+      load()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const copyToClipboard = (key: string, id: string) => {
@@ -152,7 +160,7 @@ export default function ApiKeysPage() {
                       ? <ToggleRight size={20} className="text-green-500" />
                       : <ToggleLeft size={20} />}
                   </button>
-                  <button onClick={() => deleteKey(k.id)}
+                  <button onClick={() => setConfirming(k)}
                     className="text-gray-400 hover:text-red-500 transition-colors">
                     <Trash2 size={15} />
                   </button>
@@ -166,6 +174,27 @@ export default function ApiKeysPage() {
       <p className="text-xs text-gray-400 mt-4">
         Keep your API keys secure. Do not share them publicly. Keys can be used to access price data via the BuildPrice Gambia API.
       </p>
+
+      {confirming && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-sm w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h3 className="font-bold text-gray-900">Delete API key</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Any integration using <span className="font-semibold">"{confirming.label}"</span> will immediately stop working. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} disabled={deleting} className="btn-primary bg-red-600 hover:bg-red-700 border-red-600">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete key
+              </button>
+              <button onClick={() => setConfirming(null)} disabled={deleting} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
