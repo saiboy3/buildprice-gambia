@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Loader2, Users, Star, ShieldOff, Trash2 } from 'lucide-react'
+import { Loader2, Users, Star, ShieldOff, Trash2, AlertTriangle } from 'lucide-react'
 import clsx from 'clsx'
 
 type Reporter = {
   id: string
+  userId: string
   name: string
   phone: string
   rating: number
@@ -25,8 +26,11 @@ export default function AdminFieldReportersPage() {
   const { isAdmin, token, ready } = useAuth()
   const router = useRouter()
 
-  const [reporters, setReporters] = useState<Reporter[]>([])
-  const [loading,   setLoading]   = useState(true)
+  const [reporters,  setReporters]  = useState<Reporter[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [confirming, setConfirming] = useState<Reporter | null>(null)
+  const [deleteUser, setDeleteUser] = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
 
   useEffect(() => {
     if (!ready) return
@@ -68,10 +72,24 @@ export default function AdminFieldReportersPage() {
     })
   }
 
-  const remove = async (id: string) => {
-    if (!confirm('Remove this field-reporter profile? Their account stays intact — this only removes their reporting/rating history designation.')) return
-    await fetch(`/api/admin/field-reporters?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-    setReporters(prev => prev.filter(r => r.id !== id))
+  const openConfirm = (r: Reporter) => {
+    setConfirming(r)
+    setDeleteUser(false)
+  }
+
+  const confirmDelete = async () => {
+    if (!confirming) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/admin/field-reporters?id=${confirming.id}&deleteUser=${deleteUser}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setReporters(prev => prev.filter(r => r.id !== confirming.id))
+      setConfirming(null)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   if (loading) return (
@@ -138,7 +156,7 @@ export default function AdminFieldReportersPage() {
                     >
                       <ShieldOff size={13} /> {r.active ? 'Block' : 'Unblock'}
                     </button>
-                    <button onClick={() => remove(r.id)} className="text-gray-400 hover:text-red-500 p-1.5">
+                    <button onClick={() => openConfirm(r)} className="text-gray-400 hover:text-red-500 p-1.5">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -148,6 +166,43 @@ export default function AdminFieldReportersPage() {
           ))
         )}
       </div>
+
+      {confirming && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-sm w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h3 className="font-bold text-gray-900">Remove field reporter</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              This removes <span className="font-semibold">{confirming.name}</span>'s reporter profile and rating/report history. Their account stays intact unless you also delete it below.
+            </p>
+
+            <label className="flex items-start gap-2 text-sm bg-red-50 border border-red-200 rounded-lg p-3 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={deleteUser}
+                onChange={e => setDeleteUser(e.target.checked)}
+              />
+              <span className="text-gray-700">
+                Also delete the linked login account
+                <span className="block text-xs text-gray-500 mt-0.5">
+                  {confirming.name} ({confirming.phone}) — they won't be able to sign in afterwards.
+                </span>
+              </span>
+            </label>
+
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} disabled={deleting} className="btn-primary bg-red-600 hover:bg-red-700 border-red-600">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                {deleteUser ? 'Remove reporter & delete account' : 'Remove reporter'}
+              </button>
+              <button onClick={() => setConfirming(null)} disabled={deleting} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

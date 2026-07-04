@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
     const reporters = await prisma.fieldReporter.findMany({
       include: {
-        user: { select: { name: true, phone: true } },
+        user: { select: { id: true, name: true, phone: true } },
         reports: { select: { status: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       const reviewed = approved + rejected
       return {
         id: r.id,
+        userId: r.user.id,
         name: r.user.name,
         phone: r.user.phone,
         rating: r.rating,
@@ -74,8 +75,18 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
     if (!id) return err('id is required')
+    const deleteUser = searchParams.get('deleteUser') === 'true'
+
+    const reporter = await prisma.fieldReporter.findUnique({ where: { id }, select: { userId: true } })
+    if (!reporter) return err('Not found', 404)
+
     await prisma.fieldReporter.delete({ where: { id } })
-    return ok({ deleted: true })
+
+    if (deleteUser && reporter.userId) {
+      await prisma.user.delete({ where: { id: reporter.userId } })
+    }
+
+    return ok({ deleted: true, userDeleted: deleteUser && !!reporter.userId })
   } catch (e) {
     return handleError(e)
   }
