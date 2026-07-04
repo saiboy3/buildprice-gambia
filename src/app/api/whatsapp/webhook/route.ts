@@ -54,12 +54,13 @@ export async function POST(req: NextRequest) {
 
     if (!message) return NextResponse.json({ ok: true })
 
-    const from = message.from           // sender's phone number
-    const text = message.text?.body ?? ''
+    const from     = message.from           // sender's phone number
+    const text     = message.text?.body ?? ''
+    const location = message.location       // { latitude, longitude } if the user shared their location
 
-    if (!text) return NextResponse.json({ ok: true })
+    if (!text && !location) return NextResponse.json({ ok: true })
 
-    const reply = await handleIncomingMessage(from, text)
+    const reply = await handleIncomingMessage(from, text, location ? { lat: location.latitude, lng: location.longitude } : undefined)
     await sendWhatsAppMessage(from, reply)
 
     return NextResponse.json({ ok: true })

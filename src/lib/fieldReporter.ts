@@ -54,3 +54,13 @@ export async function lookupUserNameByPhone(phone: string): Promise<string | nul
   const user = await prisma.user.findUnique({ where: { phone }, select: { name: true } })
   return user?.name ?? null
 }
+
+/** Stats needed to compute this reporter's confidence score — see src/lib/confidence.ts */
+export async function getReporterStats(reporterId: string) {
+  const [rating, approvedCount, rejectedCount] = await Promise.all([
+    prisma.fieldReporter.findUnique({ where: { id: reporterId }, select: { rating: true } }).then(r => r?.rating ?? 0),
+    prisma.fieldReport.count({ where: { reporterId, status: 'APPROVED' } }),
+    prisma.fieldReport.count({ where: { reporterId, status: 'REJECTED' } }),
+  ])
+  return { rating, approvedCount, rejectedCount }
+}

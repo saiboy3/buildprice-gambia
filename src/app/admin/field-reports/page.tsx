@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, MapPinned, Trash2, Star, Users } from 'lucide-react'
+import { Loader2, MapPinned, Trash2, Star, Users, Navigation } from 'lucide-react'
 import clsx from 'clsx'
 
 type FieldReport = {
@@ -14,8 +14,11 @@ type FieldReport = {
   price: number
   unit: string
   location: string
+  lat: number | null
+  lng: number | null
   supplierName: string | null
   photoNote: string | null
+  confidence: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   rewardNote: string | null
   createdAt: string
@@ -104,11 +107,27 @@ export default function AdminFieldReportsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <span className={clsx('text-xs font-bold px-2 py-0.5 rounded-full', statusBadge(r.status))}>{r.status}</span>
+                    <span className={clsx('text-xs font-bold px-2 py-0.5 rounded-full',
+                      r.confidence >= 85 ? 'bg-green-100 text-green-700' : r.confidence >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
+                      {r.confidence}% confidence
+                    </span>
                     <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString()}</span>
                   </div>
                   <p className="font-bold text-gray-900">{r.materialLabel}{r.material && <span className="text-xs text-gray-400 font-normal ml-1">(matched: {r.material.name})</span>}</p>
                   <p className="text-lg font-extrabold text-primary-600">D{r.price.toLocaleString()} <span className="text-sm font-normal text-gray-400">/ {r.unit}</span></p>
-                  <p className="text-xs text-gray-500 mt-1">{r.location}{r.supplierName ? ` · ${r.supplierName}` : ''}</p>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
+                    {r.location}{r.supplierName ? ` · ${r.supplierName}` : ''}
+                    {r.lat != null && r.lng != null && (
+                      <a
+                        href={`https://www.google.com/maps?q=${r.lat},${r.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 text-primary-600 hover:underline"
+                      >
+                        <Navigation size={10} /> GPS
+                      </a>
+                    )}
+                  </p>
                   {r.photoNote && <p className="text-xs text-gray-400 mt-1 italic">"{r.photoNote}"</p>}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className="text-xs text-gray-400">

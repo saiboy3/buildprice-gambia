@@ -499,8 +499,11 @@ model FieldReport {
   price         Float
   unit          String
   location      String
+  lat           Float?   // optional GPS coordinates — browser geolocation (web) or a shared WhatsApp location message
+  lng           Float?
   supplierName  String?  // free-text: the shop/seller they saw the price at (not a platform Supplier account)
   photoNote     String?  // optional free-text description in lieu of a photo (v1 has no image upload)
+  confidence    Int      @default(50) // 0-100, derived from the reporter's track record at submission time
   status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
   rewardNote    String?  // admin note on reward given, e.g. "D50 airtime sent 2026-07-05"
   createdAt     DateTime @default(now())

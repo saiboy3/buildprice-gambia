@@ -1,5 +1,6 @@
 import { prisma } from './db'
-import { getOrCreateReporterForPhone, lookupUserNameByPhone } from './fieldReporter'
+import { getOrCreateReporterForPhone, lookupUserNameByPhone, getReporterStats } from './fieldReporter'
+import { computeConfidence, initialStatusForConfidence } from './confidence'
 
 const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
 const TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN
@@ -27,6 +28,37 @@ type Ctx = Record<string, any>
 const GAMBIA_LOCATIONS = ['Banjul', 'Serrekunda', 'Bakau', 'Brikama', 'Farafenni', 'Basse']
 const UNITS = ['Bag', 'Block', 'Sheet', 'Ton', 'm³', 'Piece']
 const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+
+// Approximate town centroids — used to label a shared GPS pin with the nearest
+// known region for consistency with the numbered-list location field.
+const TOWN_COORDS: Record<string, { lat: number; lng: number }> = {
+  Banjul:     { lat: 13.4549, lng: -16.5790 },
+  Serrekunda: { lat: 13.4383, lng: -16.6775 },
+  Bakau:      { lat: 13.4784, lng: -16.6816 },
+  Brikama:    { lat: 13.2708, lng: -16.6497 },
+  Farafenni:  { lat: 13.5667, lng: -15.6000 },
+  Basse:      { lat: 13.3167, lng: -14.2167 },
+}
+
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371
+  const dLat = (b.lat - a.lat) * Math.PI / 180
+  const dLng = (b.lng - a.lng) * Math.PI / 180
+  const lat1 = a.lat * Math.PI / 180
+  const lat2 = b.lat * Math.PI / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+function nearestTown(lat: number, lng: number): string {
+  let best = GAMBIA_LOCATIONS[0]
+  let bestDist = Infinity
+  for (const [town, coords] of Object.entries(TOWN_COORDS)) {
+    const dist = haversineKm({ lat, lng }, coords)
+    if (dist < bestDist) { bestDist = dist; best = town }
+  }
+  return best
+}
 
 // ─── Session persistence ──────────────────────────────────────────────────────
 
@@ -97,11 +129,18 @@ function numberedList(items: string[]): string {
 
 // ─── Main handler ──────────────────────────────────────────────────────────────
 
-export async function handleIncomingMessage(phone: string, body: string): Promise<string> {
+export async function handleIncomingMessage(phone: string, body: string, location?: { lat: number; lng: number }): Promise<string> {
   const raw  = body.trim()
   const text = raw.toLowerCase()
   const session = await getSession(phone)
   const lang: Lang = (session.language as Lang) ?? 'en'
+
+  // A shared-location message has no text. If nothing is waiting on it, there's
+  // nothing meaningful to do — bail out here rather than falling through to a
+  // blank-text material search. Otherwise the mid-flow routing below handles it.
+  if (location && !raw && session.state !== 'AWAIT_FIELD_LOCATION') {
+    return t(lang, "Got your location, but I wasn't expecting one right now. Type *menu* to see options.", 'Nangu naa sa fan, waaye du ma ko séen. Bindal *menu* ngir yeneen.')
+  }
 
   // ── Global navigation — always takes priority, escapes any flow ──────────
   if (['menu', 'hi', 'hello', 'start', 'help', '0'].includes(text)) {
@@ -119,7 +158,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
 
   // ── If mid-flow, route to the flow handler first ─────────────────────────
   if (session.state !== 'MENU') {
-    const reply = await handleFlowStep(phone, session.state, parseCtx(session.context), raw, lang)
+    const reply = await handleFlowStep(phone, session.state, parseCtx(session.context), raw, lang, location)
     if (reply !== null) return reply
     // handler returned null → fall through to idle-menu handling below
   }
@@ -150,7 +189,7 @@ export async function handleIncomingMessage(phone: string, body: string): Promis
 }
 
 /** Returns a reply string if the flow handled the input, or null to fall back to idle-menu matching. */
-async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: string, lang: Lang): Promise<string | null> {
+async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: string, lang: Lang, location?: { lat: number; lng: number }): Promise<string | null> {
   const text = raw.trim().toLowerCase()
 
   switch (state) {
@@ -303,8 +342,8 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       }
       await setSession(phone, 'AWAIT_FIELD_LOCATION', { ...ctx, unit: UNITS[idx] })
       return t(lang,
-        `📍 Where did you see this price?\n\n${numberedList(GAMBIA_LOCATIONS)}`,
-        `📍 Fan nga gis prix bii?\n\n${numberedList(GAMBIA_LOCATIONS)}`
+        `📍 Where did you see this price?\n\nReply with a number, or tap 📎 and share your location:\n\n${numberedList(GAMBIA_LOCATIONS)}`,
+        `📍 Fan nga gis prix bii?\n\nBindal benn limit, walla bësal 📎 te yónnee sa fan:\n\n${numberedList(GAMBIA_LOCATIONS)}`
       )
     }
 
@@ -321,13 +360,28 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
     }
 
     case 'AWAIT_FIELD_LOCATION': {
-      const idx = parseInt(text) - 1
-      if (isNaN(idx) || idx < 0 || idx >= GAMBIA_LOCATIONS.length) {
-        return t(lang, 'Reply with a number from the list.', 'Bindal benn limit ci lëkkël bi.')
+      let resolvedLocation: string
+      let lat: number | undefined
+      let lng: number | undefined
+
+      if (location) {
+        lat = location.lat
+        lng = location.lng
+        resolvedLocation = nearestTown(location.lat, location.lng)
+      } else {
+        const idx = parseInt(text) - 1
+        if (isNaN(idx) || idx < 0 || idx >= GAMBIA_LOCATIONS.length) {
+          return t(lang, 'Reply with a number from the list, or share your location.', 'Bindal benn limit ci lëkkël bi, walla yónnee sa fan.')
+        }
+        resolvedLocation = GAMBIA_LOCATIONS[idx]
       }
-      const location = GAMBIA_LOCATIONS[idx]
+
       const reporterName = ctx.reporterName ?? (await lookupUserNameByPhone(phone)) ?? 'WhatsApp Reporter'
       const reporter = await getOrCreateReporterForPhone(phone, reporterName)
+      const stats = await getReporterStats(reporter.id)
+      const confidence = computeConfidence(stats)
+      const status = initialStatusForConfidence(confidence)
+
       await prisma.fieldReport.create({
         data: {
           reporterId: reporter.id,
@@ -335,16 +389,23 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
           materialLabel: ctx.materialLabel,
           price: ctx.price,
           unit: ctx.unit,
-          location,
+          location: resolvedLocation,
+          lat: lat ?? null,
+          lng: lng ?? null,
+          confidence,
+          status,
         },
       })
       const totalCount = await prisma.fieldReport.count({ where: { reporterId: reporter.id } })
       await setSession(phone, 'MENU')
+      const statusNote = status === 'APPROVED'
+        ? t(lang, "You're a trusted reporter, so this one's already live!", 'Yaa ngi jullit! Xibaar bi mu ngi jàppale ci saa si.')
+        : t(lang, 'Your price report has been submitted for review.', 'Sa xibaar prix yónnee nañu ko ngir xool.')
       return t(lang,
-        `✅ *Thank you, ${reporter.user.name}!* Your price report has been submitted for review.\n\n` +
+        `✅ *Thank you, ${reporter.user.name}!* ${statusNote}\n\n` +
         `You've now submitted ${totalCount} price report${totalCount !== 1 ? 's' : ''}.\n\n` +
         `Type *menu* for more options.`,
-        `✅ *Jërëjëf, ${reporter.user.name}!* Sa xibaar prix yónnee nañu ko ngir xool.\n\n` +
+        `✅ *Jërëjëf, ${reporter.user.name}!* ${statusNote}\n\n` +
         `Yónnee nga leegi ${totalCount} xibaar prix.\n\n` +
         `Bindal *menu* ngir yeneen.`
       )

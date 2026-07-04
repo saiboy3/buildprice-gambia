@@ -6,7 +6,8 @@ import { useT, useLang } from '@/lib/LanguageContext'
 import { useAuth } from '@/lib/context'
 import { GAMBIA_LOCATIONS, getUserLocation } from '@/lib/location'
 import { getCategoryMeta } from '@/lib/visual'
-import { CheckCircle2, ChevronLeft, Loader2, MapPin, LogIn } from 'lucide-react'
+import { saveDraft, loadDraft, clearDraft, enqueue, flushQueue, getQueue, type ReportDraft } from '@/lib/offlineQueue'
+import { CheckCircle2, ChevronLeft, Loader2, MapPin, LogIn, Navigation, CloudOff } from 'lucide-react'
 
 type MaterialOption = { id: string; name: string; categoryName: string }
 
@@ -21,6 +22,7 @@ export default function ReportWizard() {
   const { user, token, ready } = useAuth()
 
   const [step, setStep] = useState(1)
+  const [draftRestored, setDraftRestored] = useState(false)
 
   // Data
   const [materials, setMaterials]   = useState<MaterialOption[]>([])
@@ -34,10 +36,17 @@ export default function ReportWizard() {
   const [supplierName, setSupplierName] = useState('')
   const [note,      setNote]        = useState('')
 
+  // GPS (optional, precise supplement to the named location)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [locateError, setLocateError] = useState('')
+
   // Submission state
   const [submitting, setSubmitting] = useState(false)
   const [error,       setError]     = useState('')
   const [totalCount,  setTotalCount] = useState<number | null>(null)
+  const [queuedOffline, setQueuedOffline] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/materials')
@@ -46,12 +55,61 @@ export default function ReportWizard() {
         if (j.ok) setMaterials(j.data.map((m: any) => ({ id: m.id, name: m.name, categoryName: m.category?.name ?? '' })))
       })
       .catch(() => {})
-    const stored = getUserLocation()
-    if (stored) setLocation(stored)
+
+    // Restore an in-progress draft (e.g. connection dropped or tab closed mid-form)
+    const draft = loadDraft()
+    if (draft) {
+      setStep(draft.step)
+      setMaterialId(draft.materialId)
+      setMaterialLabel(draft.materialLabel)
+      setOtherMaterial(draft.otherMaterial)
+      setPrice(draft.price)
+      setUnit(draft.unit)
+      setOtherUnit(draft.otherUnit)
+      setLocation(draft.location)
+      setSupplierName(draft.supplierName)
+      setNote(draft.note)
+    } else {
+      const stored = getUserLocation()
+      if (stored) setLocation(stored)
+    }
+    setDraftRestored(true)
+    setPendingCount(getQueue().length)
   }, [])
+
+  // Persist the draft as the user progresses, so a dropped connection never loses their work.
+  useEffect(() => {
+    if (!draftRestored) return
+    const draft: ReportDraft = {
+      step, materialId, materialLabel, otherMaterial, price, unit, otherUnit, location, supplierName, note,
+    }
+    saveDraft(draft)
+  }, [draftRestored, step, materialId, materialLabel, otherMaterial, price, unit, otherUnit, location, supplierName, note])
+
+  // Try to flush any queued offline submissions once we have a token and whenever connectivity returns.
+  useEffect(() => {
+    if (!token) return
+    const tryFlush = () => {
+      flushQueue(token).then(() => setPendingCount(getQueue().length))
+    }
+    tryFlush()
+    window.addEventListener('online', tryFlush)
+    return () => window.removeEventListener('online', tryFlush)
+  }, [token])
 
   const finalUnit = unit === 'Other' ? otherUnit : unit
   const finalMaterialLabel = materialId ? materialLabel : otherMaterial
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) { setLocateError('Location is not supported on this device.'); return }
+    setLocating(true)
+    setLocateError('')
+    navigator.geolocation.getCurrentPosition(
+      pos => { setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false) },
+      () => { setLocateError('Could not get your location — you can still pick a town below.'); setLocating(false) },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   const canProceed = (() => {
     switch (step) {
@@ -69,26 +127,35 @@ export default function ReportWizard() {
   const submit = async () => {
     setSubmitting(true)
     setError('')
+    const payload = {
+      materialId,
+      materialLabel: finalMaterialLabel,
+      price: Number(price),
+      unit: finalUnit,
+      location,
+      lat: coords?.lat,
+      lng: coords?.lng,
+      supplierName: supplierName || undefined,
+      photoNote: note || undefined,
+    }
     try {
       const res = await fetch('/api/field-reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          materialId,
-          materialLabel: finalMaterialLabel,
-          price: Number(price),
-          unit: finalUnit,
-          location,
-          supplierName: supplierName || undefined,
-          photoNote: note || undefined,
-        }),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
       if (!json.ok) { setError(json.error ?? 'Something went wrong. Please try again.'); return }
       setTotalCount(json.data.totalCount)
+      clearDraft()
       setStep(TOTAL_STEPS + 1)
     } catch {
-      setError('Could not send — check your connection and try again.')
+      // Network failure — likely offline. Queue it instead of losing the report.
+      enqueue(payload)
+      setPendingCount(getQueue().length)
+      setQueuedOffline(true)
+      clearDraft()
+      setStep(TOTAL_STEPS + 1)
     } finally {
       setSubmitting(false)
     }
@@ -98,6 +165,7 @@ export default function ReportWizard() {
     setMaterialId(null); setMaterialLabel(''); setOtherMaterial('')
     setPrice(''); setUnit(''); setOtherUnit('')
     setSupplierName(''); setNote(''); setError('')
+    setCoords(null); setLocateError(''); setQueuedOffline(false)
     setStep(1)
   }
 
@@ -135,6 +203,13 @@ export default function ReportWizard() {
         <h1 className="text-2xl font-bold text-gray-900 font-display">{tr('report.title')}</h1>
         <p className="text-sm text-gray-500 mt-1">{tr('report.subtitle')}</p>
       </div>
+
+      {pendingCount > 0 && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium px-3 py-2 rounded-xl mb-4">
+          <CloudOff size={14} />
+          {pendingCount} report{pendingCount !== 1 ? 's' : ''} saved offline — will send automatically once you're back online.
+        </div>
+      )}
 
       {/* Progress dots */}
       {step <= TOTAL_STEPS && (
@@ -238,6 +313,15 @@ export default function ReportWizard() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={shareLocation}
+              disabled={locating}
+              className="flex items-center justify-center gap-2 text-sm font-semibold text-primary-600 border border-primary-200 bg-primary-50 rounded-xl py-3 mt-1"
+            >
+              {locating ? <Loader2 size={15} className="animate-spin" /> : <Navigation size={15} />}
+              {coords ? 'Exact location captured ✓' : 'Share my exact location (optional)'}
+            </button>
+            {locateError && <p className="text-xs text-red-500">{locateError}</p>}
           </div>
         )}
 
@@ -271,7 +355,7 @@ export default function ReportWizard() {
               </div>
               <div className="flex justify-between border-b border-gray-100 pb-2">
                 <span className="text-gray-500">{tr('report.step.review.location')}</span>
-                <span className="font-semibold text-gray-900">{location}</span>
+                <span className="font-semibold text-gray-900">{location}{coords ? ' 📍' : ''}</span>
               </div>
               {supplierName && (
                 <div className="flex justify-between border-b border-gray-100 pb-2">
@@ -287,12 +371,24 @@ export default function ReportWizard() {
         {/* Thank you */}
         {step === TOTAL_STEPS + 1 && (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-6">
-            <CheckCircle2 size={48} className="text-emerald-500" />
-            <h2 className="text-xl font-bold text-gray-900">{tr('report.thankyou.title')}</h2>
-            {totalCount !== null && (
-              <p className="text-sm text-gray-500">
-                {tr('report.thankyou.prefix')} <span className="font-bold text-primary-600">{totalCount}</span> {tr('report.thankyou.suffix')}
-              </p>
+            {queuedOffline ? (
+              <>
+                <CloudOff size={48} className="text-amber-500" />
+                <h2 className="text-xl font-bold text-gray-900">Saved — no connection right now</h2>
+                <p className="text-sm text-gray-500">
+                  Your report is saved on this device and will send automatically as soon as you're back online.
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={48} className="text-emerald-500" />
+                <h2 className="text-xl font-bold text-gray-900">{tr('report.thankyou.title')}</h2>
+                {totalCount !== null && (
+                  <p className="text-sm text-gray-500">
+                    {tr('report.thankyou.prefix')} <span className="font-bold text-primary-600">{totalCount}</span> {tr('report.thankyou.suffix')}
+                  </p>
+                )}
+              </>
             )}
             <div className="flex gap-2 mt-4 w-full">
               <button onClick={resetForAnother} className="btn-primary flex-1 justify-center py-3">
