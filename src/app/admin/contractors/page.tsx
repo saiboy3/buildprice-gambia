@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, ShieldCheck, ShieldOff, Star, MapPin, ExternalLink } from 'lucide-react'
+import { Loader2, ShieldCheck, ShieldOff, Star, MapPin, ExternalLink, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 
 type Contractor = {
@@ -43,6 +43,15 @@ export default function AdminContractorsPage() {
       body:    JSON.stringify({ verified: !current }),
     })
     setToggling(null)
+    load()
+  }
+
+  const deleteContractor = async (id: string) => {
+    if (!confirm('Delete this contractor?')) return
+    await fetch(`/api/admin/contractors?id=${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
     load()
   }
 
@@ -132,6 +141,9 @@ export default function AdminContractorsPage() {
                       className="text-gray-400 hover:text-primary-600 transition-colors" title="View profile">
                       <ExternalLink size={14} />
                     </Link>
+                    <button onClick={() => deleteContractor(c.id)} className="text-gray-400 hover:text-red-500 p-1 transition-colors" title="Delete contractor">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </td>
               </tr>
