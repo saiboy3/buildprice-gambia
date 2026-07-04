@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth, AuthError } from '@/lib/auth'
 import { sanitizeUrlList } from '@/lib/validate'
+import { getMySupplierId } from '@/lib/supplierAuth'
 
 export async function GET(req: NextRequest) {
   try {
     const tokenUser = requireAuth(req, ['SUPPLIER'])
-    const supplierId = tokenUser.supplierId
+    const supplierId = await getMySupplierId(tokenUser.id)
     if (!supplierId) {
       return NextResponse.json({ ok: false, message: 'No supplier profile linked' }, { status: 403 })
     }
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const tokenUser = requireAuth(req, ['SUPPLIER'])
-    const supplierId = tokenUser.supplierId
+    const supplierId = await getMySupplierId(tokenUser.id)
     if (!supplierId) {
       return NextResponse.json({ ok: false, message: 'No supplier profile linked' }, { status: 403 })
     }

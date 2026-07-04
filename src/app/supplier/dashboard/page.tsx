@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, MessageSquare, Package, TrendingUp, Plus, Pencil, Trash2, Loader2, Store } from 'lucide-react'
+import { Eye, MessageSquare, Package, TrendingUp, Pencil, Trash2, Loader2, Store, Save, ListPlus, X } from 'lucide-react'
 import clsx from 'clsx'
 
 type Price = {
@@ -19,7 +19,10 @@ type Price = {
 type Material = { id: string; name: string; category: { name: string } }
 type SupplierProfile = { id: string; name: string; location: string; contact: string; views: number; inquiries: number }
 
+type RowState = { price: string; unit: string; stockStatus: string; dirty: boolean; existingId: string | null }
+
 const STATUS_OPTIONS = ['AVAILABLE', 'LIMITED', 'OUT_OF_STOCK']
+const DEFAULT_UNIT = 'bag (50kg)'
 
 export default function SupplierDashboard() {
   const { user, token, isSupplier, ready } = useAuth()
@@ -31,11 +34,8 @@ export default function SupplierDashboard() {
   const [loading,   setLoading]   = useState(true)
   const [showForm,  setShowForm]  = useState(false)
 
-  // Form state
-  const [selMat,      setSelMat]      = useState('')
-  const [selPrice,    setSelPrice]    = useState('')
-  const [selUnit,     setSelUnit]     = useState('bag (50kg)')
-  const [selStatus,   setSelStatus]   = useState('AVAILABLE')
+  // Bulk price-list form state: one row per material, keyed by material id
+  const [rows,        setRows]        = useState<Record<string, RowState>>({})
   const [formLoading, setFormLoading] = useState(false)
   const [formError,   setFormError]   = useState('')
 
@@ -66,19 +66,48 @@ export default function SupplierDashboard() {
     }
   }
 
-  const submitPrice = async () => {
+  const openList = () => {
+    // Seed one row per material, prefilled from any existing price
+    const seeded: Record<string, RowState> = {}
+    for (const m of materials) {
+      const existing = prices.find(p => p.material.id === m.id)
+      seeded[m.id] = existing
+        ? { price: String(existing.price), unit: existing.unit, stockStatus: existing.stockStatus, dirty: false, existingId: existing.id }
+        : { price: '', unit: DEFAULT_UNIT, stockStatus: 'AVAILABLE', dirty: false, existingId: null }
+    }
+    setRows(seeded)
     setFormError('')
-    if (!selMat || !selPrice) { setFormError('Material and price are required'); return }
+    setShowForm(true)
+  }
+
+  const updateRow = (materialId: string, patch: Partial<RowState>) => {
+    setRows(r => ({ ...r, [materialId]: { ...r[materialId], ...patch, dirty: true } }))
+  }
+
+  const dirtyCount = useMemo(
+    () => Object.values(rows).filter(r => r.dirty && r.price.trim() !== '').length,
+    [rows]
+  )
+
+  const saveAllPrices = async () => {
+    setFormError('')
+    const items = Object.entries(rows)
+      .filter(([, r]) => r.dirty && r.price.trim() !== '')
+      .map(([materialId, r]) => ({ materialId, price: parseFloat(r.price), unit: r.unit, stockStatus: r.stockStatus }))
+
+    if (items.length === 0) { setFormError('Enter at least one price to save'); return }
+    if (items.some(i => isNaN(i.price) || i.price < 0)) { setFormError('Prices must be valid, non-negative numbers'); return }
+
     setFormLoading(true)
     try {
       const res  = await fetch('/api/supplier/prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ materialId: selMat, price: parseFloat(selPrice), unit: selUnit, stockStatus: selStatus }),
+        body: JSON.stringify({ items }),
       })
       const json = await res.json()
       if (!json.ok) { setFormError(json.error); return }
-      setShowForm(false); setSelMat(''); setSelPrice(''); setSelUnit('bag (50kg)'); setSelStatus('AVAILABLE')
+      setShowForm(false)
       loadData()
     } finally {
       setFormLoading(false)
@@ -133,8 +162,8 @@ export default function SupplierDashboard() {
           <Link href="/supplier/profile" className="btn-secondary">
             <Pencil size={14} /> Edit Profile
           </Link>
-          <button onClick={() => setShowForm(s => !s)} className="btn-primary">
-            <Plus size={16} /> Add / Update Price
+          <button onClick={() => (showForm ? setShowForm(false) : openList())} className="btn-primary">
+            <ListPlus size={16} /> Add / Update Prices
           </button>
         </div>
       </div>
@@ -155,41 +184,65 @@ export default function SupplierDashboard() {
         ))}
       </div>
 
-      {/* Add price form */}
+      {/* Bulk price-list form */}
       {showForm && (
         <div className="card mb-6 border-primary-200">
-          <h2 className="font-semibold text-gray-900 mb-4">Add / Update Price</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Material *</label>
-              <select className="input" value={selMat} onChange={e => setSelMat(e.target.value)}>
-                <option value="">Select material…</option>
-                {materials.map((m: Material) => (
-                  <option key={m.id} value={m.id}>{m.name} ({m.category.name})</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Price (Dalasi) *</label>
-              <input type="number" className="input" placeholder="e.g. 750" value={selPrice} onChange={e => setSelPrice(e.target.value)} min="0" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Unit</label>
-              <input type="text" className="input" placeholder="bag (50kg), ton, m³…" value={selUnit} onChange={e => setSelUnit(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Stock status</label>
-              <select className="input" value={selStatus} onChange={e => setSelStatus(e.target.value)}>
-                <option value="AVAILABLE">Available</option>
-                <option value="LIMITED">Limited</option>
-                <option value="OUT_OF_STOCK">Out of stock</option>
-              </select>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">Add / Update Prices</h2>
+            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <X size={18} />
+            </button>
           </div>
+          <p className="text-xs text-gray-500 mb-4">Fill in a price for any material you sell, then save them all at once.</p>
+
+          <div className="max-h-[28rem] overflow-y-auto -mx-2 px-2 space-y-6">
+            {Object.entries(
+              materials.reduce<Record<string, Material[]>>((acc, m) => {
+                (acc[m.category.name] ??= []).push(m)
+                return acc
+              }, {})
+            ).map(([catName, mats]) => (
+              <div key={catName}>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{catName}</p>
+                <div className="space-y-2">
+                  {mats.map(m => {
+                    const row = rows[m.id]
+                    if (!row) return null
+                    return (
+                      <div key={m.id} className="grid grid-cols-12 gap-2 items-center">
+                        <p className="col-span-4 text-sm text-gray-700 truncate">{m.name}</p>
+                        <input
+                          type="number" min="0" placeholder="Price"
+                          className="input col-span-3 py-1.5 text-sm"
+                          value={row.price}
+                          onChange={e => updateRow(m.id, { price: e.target.value })}
+                        />
+                        <input
+                          type="text" placeholder="Unit"
+                          className="input col-span-3 py-1.5 text-sm"
+                          value={row.unit}
+                          onChange={e => updateRow(m.id, { unit: e.target.value })}
+                        />
+                        <select
+                          className="input col-span-2 py-1.5 text-xs"
+                          value={row.stockStatus}
+                          onChange={e => updateRow(m.id, { stockStatus: e.target.value })}
+                        >
+                          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                        </select>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
           {formError && <p className="text-sm text-red-500 mt-3">{formError}</p>}
-          <div className="flex gap-2 mt-4">
-            <button onClick={submitPrice} disabled={formLoading} className="btn-primary">
-              {formLoading ? <Loader2 size={14} className="animate-spin" /> : 'Save price'}
+          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button onClick={saveAllPrices} disabled={formLoading || dirtyCount === 0} className="btn-primary">
+              {formLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Save Changes {dirtyCount > 0 && `(${dirtyCount})`}
             </button>
             <button onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
           </div>
@@ -200,7 +253,7 @@ export default function SupplierDashboard() {
       <div className="card">
         <h2 className="font-semibold text-gray-900 mb-4">My Listed Prices</h2>
         {prices.length === 0 ? (
-          <p className="text-gray-400 text-center py-8 text-sm">No prices listed yet. Click "Add / Update Price" to get started.</p>
+          <p className="text-gray-400 text-center py-8 text-sm">No prices listed yet. Click "Add / Update Prices" to get started.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
