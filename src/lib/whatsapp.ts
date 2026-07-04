@@ -1,4 +1,5 @@
 import { prisma } from './db'
+import { resolveReporter, lookupReporterName } from './fieldReporter'
 
 const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID
 const TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN
@@ -169,7 +170,8 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       const nextState =
         state === 'AWAIT_CATEGORY_FOR_PRICE' ? 'AWAIT_MATERIAL_FOR_PRICE' :
         state === 'AWAIT_ALERT_CATEGORY' ? 'AWAIT_MATERIAL_FOR_ALERT' : 'AWAIT_FIELD_MATERIAL'
-      await setSession(phone, nextState, { materialIds: materials.map(m => m.id) })
+      // Preserve any context carried in (e.g. reporterName for the field-report flow)
+      await setSession(phone, nextState, { ...ctx, materialIds: materials.map(m => m.id) })
       const header = t(lang, `📋 *${category.name}*\n\nReply with a number:`, `📋 *${category.name}*\n\nBindal benn limit:`)
       return `${header}\n\n${numberedList(materials.map(m => m.name))}`
     }
@@ -266,7 +268,7 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       const idx = parseInt(text) - 1
       const materialIds: string[] = ctx.materialIds ?? []
       if (idx === -1 && text === '0') {
-        await setSession(phone, 'AWAIT_FIELD_MATERIAL_OTHER')
+        await setSession(phone, 'AWAIT_FIELD_MATERIAL_OTHER', { reporterName: ctx.reporterName })
         return t(lang, 'Type the material name:', 'Bindal tur jumtukaay bi:')
       }
       if (isNaN(idx) || idx < 0 || idx >= materialIds.length) {
@@ -274,13 +276,13 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       }
       const material = await prisma.material.findUnique({ where: { id: materialIds[idx] } })
       if (!material) return t(lang, 'Material not found.', 'Jumtukaay bii nekkul.')
-      await setSession(phone, 'AWAIT_FIELD_PRICE', { materialId: material.id, materialLabel: material.name })
+      await setSession(phone, 'AWAIT_FIELD_PRICE', { reporterName: ctx.reporterName, materialId: material.id, materialLabel: material.name })
       return t(lang, `💰 What price did you see for *${material.name}*? (number only, in Dalasi)`, `💰 Ñaata la prix *${material.name}* nga gis? (limit rekk, ci Dalasi)`)
     }
 
     case 'AWAIT_FIELD_MATERIAL_OTHER': {
       if (!raw) return t(lang, 'Please type the material name.', 'Bindal tur jumtukaay bi.')
-      await setSession(phone, 'AWAIT_FIELD_PRICE', { materialLabel: raw })
+      await setSession(phone, 'AWAIT_FIELD_PRICE', { reporterName: ctx.reporterName, materialLabel: raw })
       return t(lang, `💰 What price did you see for *${raw}*? (number only, in Dalasi)`, `💰 Ñaata la prix *${raw}* nga gis? (limit rekk, ci Dalasi)`)
     }
 
@@ -306,14 +308,30 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
       )
     }
 
+    case 'AWAIT_FIELD_NAME': {
+      if (!raw || raw.trim().length < 2) {
+        return t(lang, 'Please type your name.', 'Bindal sa tur.')
+      }
+      const categories = await getCategories()
+      await setSession(phone, 'AWAIT_FIELD_CATEGORY', { ...ctx, reporterName: raw.trim().slice(0, 100) })
+      return t(lang,
+        `Thanks, ${raw.trim()}! What type of material?\n\n${letteredCategoryList(categories)}`,
+        `Jërëjëf, ${raw.trim()}! Lan xeetu jumtukaay?\n\n${letteredCategoryList(categories)}`
+      )
+    }
+
     case 'AWAIT_FIELD_LOCATION': {
       const idx = parseInt(text) - 1
       if (isNaN(idx) || idx < 0 || idx >= GAMBIA_LOCATIONS.length) {
         return t(lang, 'Reply with a number from the list.', 'Bindal benn limit ci lëkkël bi.')
       }
       const location = GAMBIA_LOCATIONS[idx]
+      const reporterName = ctx.reporterName ?? (await lookupReporterName(phone)) ?? 'WhatsApp Reporter'
+      const reporter = await resolveReporter(phone, reporterName)
       await prisma.fieldReport.create({
         data: {
+          reporterId: reporter.id,
+          reporterName,
           reporterPhone: phone,
           materialId: ctx.materialId ?? null,
           materialLabel: ctx.materialLabel,
@@ -322,14 +340,14 @@ async function handleFlowStep(phone: string, state: string, ctx: Ctx, raw: strin
           location,
         },
       })
-      const totalCount = await prisma.fieldReport.count({ where: { reporterPhone: phone } })
+      const totalCount = await prisma.fieldReport.count({ where: { reporterId: reporter.id } })
       await setSession(phone, 'MENU')
       return t(lang,
-        `✅ *Thank you!* Your price report has been submitted for review.\n\n` +
-        `You've now submitted ${totalCount} price report${totalCount !== 1 ? 's' : ''} via WhatsApp.\n\n` +
+        `✅ *Thank you, ${reporter.name}!* Your price report has been submitted for review.\n\n` +
+        `You've now submitted ${totalCount} price report${totalCount !== 1 ? 's' : ''}.\n\n` +
         `Type *menu* for more options.`,
-        `✅ *Jërëjëf!* Sa xibaar prix yónnee nañu ko ngir xool.\n\n` +
-        `Yónnee nga leegi ${totalCount} xibaar prix ci WhatsApp.\n\n` +
+        `✅ *Jërëjëf, ${reporter.name}!* Sa xibaar prix yónnee nañu ko ngir xool.\n\n` +
+        `Yónnee nga leegi ${totalCount} xibaar prix.\n\n` +
         `Bindal *menu* ngir yeneen.`
       )
     }
@@ -382,11 +400,22 @@ async function startSupplierInfo(phone: string, lang: Lang): Promise<string> {
 }
 
 async function startReportPrice(phone: string, lang: Lang): Promise<string> {
-  const categories = await getCategories()
-  await setSession(phone, 'AWAIT_FIELD_CATEGORY')
+  const knownName = await lookupReporterName(phone)
+
+  // Returning reporter — skip straight to the category picker, no need to re-ask their name.
+  if (knownName) {
+    const categories = await getCategories()
+    await setSession(phone, 'AWAIT_FIELD_CATEGORY', { reporterName: knownName })
+    return t(lang,
+      `📸 *Report a Price*\n\nWelcome back, ${knownName}! What type of material?\n\n${letteredCategoryList(categories)}`,
+      `📸 *Yónnee Prix bu Bees*\n\nDalal ak jàmm, ${knownName}! Lan xeetu jumtukaay?\n\n${letteredCategoryList(categories)}`
+    )
+  }
+
+  await setSession(phone, 'AWAIT_FIELD_NAME')
   return t(lang,
-    `📸 *Report a Price*\n\nHelp us track real prices — takes about a minute.\n\nWhat type of material?\n\n${letteredCategoryList(categories)}`,
-    `📸 *Yónnee Prix bu Bees*\n\nDimbali ñu xam prix yu dëgg — dafay yagg ab simili minute.\n\nLan xeetu jumtukaay?\n\n${letteredCategoryList(categories)}`
+    `📸 *Report a Price*\n\nHelp us track real prices — takes about a minute.\n\nFirst, what's your name?`,
+    `📸 *Yónnee Prix bu Bees*\n\nDimbali ñu xam prix yu dëgg — dafay yagg ab simili minute.\n\nDéggal, lan mooy sa tur?`
   )
 }
 

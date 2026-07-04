@@ -24,6 +24,7 @@ export default function ReportWizard() {
   const [materials, setMaterials]   = useState<MaterialOption[]>([])
   const [phone,     setPhone]       = useState('')
   const [name,      setName]        = useState('')
+  const [knownReporter, setKnownReporter] = useState(false)
   const [materialId, setMaterialId] = useState<string | null>(null)
   const [materialLabel, setMaterialLabel] = useState('')
   const [otherMaterial, setOtherMaterial] = useState('')
@@ -53,9 +54,26 @@ export default function ReportWizard() {
   const finalUnit = unit === 'Other' ? otherUnit : unit
   const finalMaterialLabel = materialId ? materialLabel : otherMaterial
 
+  // Look up whether this phone belongs to a known reporter, so returning
+  // reporters don't have to retype their name every time.
+  useEffect(() => {
+    const trimmed = phone.trim()
+    if (!/^\+?\d{7,15}$/.test(trimmed)) { setKnownReporter(false); return }
+    const timeout = setTimeout(() => {
+      fetch(`/api/reporters/lookup?phone=${encodeURIComponent(trimmed)}`)
+        .then(r => r.json())
+        .then(j => {
+          if (j.ok && j.data.name) { setName(j.data.name); setKnownReporter(true) }
+          else setKnownReporter(false)
+        })
+        .catch(() => {})
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [phone])
+
   const canProceed = (() => {
     switch (step) {
-      case 1: return /^\+?\d{7,15}$/.test(phone.trim())
+      case 1: return /^\+?\d{7,15}$/.test(phone.trim()) && name.trim().length >= 2
       case 2: return !!finalMaterialLabel.trim()
       case 3: return !!price && Number(price) > 0 && !!finalUnit.trim()
       case 4: return !!location
@@ -75,7 +93,7 @@ export default function ReportWizard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reporterName: name || undefined,
+          reporterName: name.trim(),
           reporterPhone: phone.trim(),
           materialId,
           materialLabel: finalMaterialLabel,
@@ -147,8 +165,12 @@ export default function ReportWizard() {
                 className="input py-3"
                 placeholder={tr('report.step.name.placeholder')}
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => { setName(e.target.value); setKnownReporter(false) }}
+                required
               />
+              {knownReporter && (
+                <p className="text-xs text-primary-600 mt-1.5">{tr('report.step.name.welcomeBack')}</p>
+              )}
             </div>
           </div>
         )}

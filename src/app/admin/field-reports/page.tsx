@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Loader2, MapPinned, Trash2, Trophy } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, MapPinned, Trash2, Trophy, Star } from 'lucide-react'
 import clsx from 'clsx'
 
 type FieldReport = {
@@ -20,6 +21,7 @@ type FieldReport = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   rewardNote: string | null
   createdAt: string
+  reporter: { id: string; name: string; rating: number; active: boolean } | null
 }
 
 type LeaderboardEntry = { phone: string; name: string | null; count: number }
@@ -111,9 +113,21 @@ export default function AdminFieldReportsPage() {
                     <p className="text-lg font-extrabold text-primary-600">D{r.price.toLocaleString()} <span className="text-sm font-normal text-gray-400">/ {r.unit}</span></p>
                     <p className="text-xs text-gray-500 mt-1">{r.location}{r.supplierName ? ` · ${r.supplierName}` : ''}</p>
                     {r.photoNote && <p className="text-xs text-gray-400 mt-1 italic">"{r.photoNote}"</p>}
-                    <p className="text-xs text-gray-400 mt-2">
-                      Reporter: {r.reporterName || 'Anonymous'} · {r.reporterPhone}
-                    </p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="text-xs text-gray-400">
+                        Reporter: {r.reporterName || 'Anonymous'} · {r.reporterPhone}
+                      </span>
+                      {r.reporter && (
+                        <span className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} size={11} className={star <= r.reporter!.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
+                          ))}
+                        </span>
+                      )}
+                      {r.reporter && !r.reporter.active && (
+                        <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full font-semibold">Blocked</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <select
@@ -154,6 +168,9 @@ export default function AdminFieldReportsPage() {
           <p className="text-xs text-gray-400 mt-4 pt-3 border-t border-gray-100">
             Use this list to manually send airtime/rewards — no automated payout is wired up yet.
           </p>
+          <Link href="/admin/field-reporters" className="text-xs text-primary-600 hover:underline font-medium mt-2 inline-block">
+            Manage reporters &amp; ratings →
+          </Link>
         </div>
       </div>
     </div>

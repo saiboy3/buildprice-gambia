@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
     const [reports, leaderboardRaw] = await Promise.all([
       prisma.fieldReport.findMany({
         where: status && status !== 'ALL' ? { status } : undefined,
-        include: { material: { select: { name: true } } },
+        include: {
+          material: { select: { name: true } },
+          reporter: { select: { id: true, name: true, rating: true, active: true } },
+        },
         orderBy: { createdAt: 'desc' },
         take: 300,
       }),
