@@ -72,8 +72,15 @@ export default function PrivacyPolicyPage() {
       <p>
         We keep account data for as long as your account is active. Deleting your account (see above) removes your
         login and any linked supplier or field-reporter profile; a linked contractor listing, if any, stays live but
-        is unlinked from your account. Activity logs used for security auditing are retained separately for abuse
-        investigation.
+        is unlinked from your account.
+      </p>
+      <ul>
+        <li><strong>Admin activity logs</strong> (who changed what, for security auditing) are automatically deleted after <strong>180 days</strong>.</li>
+        <li><strong>Rate-limit counters</strong> (used to detect abuse of login/registration/submission endpoints) are automatically deleted after <strong>7 days</strong> — they're only ever needed for a short sliding window.</li>
+      </ul>
+      <p>
+        These are purged daily by an automated job rather than kept indefinitely, since neither has a business reason
+        to outlive its operational purpose.
       </p>
 
       <h2>8. Security</h2>

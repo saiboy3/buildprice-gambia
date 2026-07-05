@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { Loader2, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 
 type Log = { id: string; action: string; details: string | null; userId: string | null; createdAt: string }
 
@@ -28,6 +28,8 @@ export default function AdminLogs() {
   const [logs,    setLogs]    = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('')
+  const [cleaning, setCleaning] = useState(false)
+  const [cleanupResult, setCleanupResult] = useState<{ activityLogsDeleted: number; rateLimitEventsDeleted: number } | null>(null)
 
   useEffect(() => {
     if (!ready) return
@@ -43,6 +45,18 @@ export default function AdminLogs() {
     setLoading(false)
   }
 
+  const runCleanupNow = async () => {
+    setCleaning(true)
+    setCleanupResult(null)
+    try {
+      const res  = await fetch('/api/cron/cleanup-logs', { headers: { Authorization: `Bearer ${token}` } })
+      const json = await res.json()
+      if (json.ok) { setCleanupResult(json.data); load() }
+    } finally {
+      setCleaning(false)
+    }
+  }
+
   const filtered = filter ? logs.filter(l => l.action.includes(filter.toUpperCase()) || (l.details?.toLowerCase().includes(filter.toLowerCase()))) : logs
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 size={28} className="animate-spin text-primary-500" /></div>
@@ -55,6 +69,26 @@ export default function AdminLogs() {
           <input type="text" className="input w-48" placeholder="Filter…" value={filter} onChange={e => setFilter(e.target.value)} />
           <button onClick={load} className="btn-secondary p-2"><RefreshCw size={15} /></button>
         </div>
+      </div>
+
+      <div className="card mb-4 flex flex-wrap items-center justify-between gap-3 bg-gray-50 border-gray-200">
+        <div className="flex items-start gap-2">
+          <ShieldCheck size={16} className="text-primary-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-500 max-w-xl">
+            Activity logs are auto-purged after 180 days and rate-limit counters after 7 days by a daily job
+            (<code className="text-gray-600">/api/cron/cleanup-logs</code>) — see the Data retention section of{' '}
+            <a href="/privacy" target="_blank" className="text-primary-600 hover:underline">Privacy Policy</a>.
+          </p>
+        </div>
+        <button onClick={runCleanupNow} disabled={cleaning} className="btn-secondary text-xs px-3 py-1.5 shrink-0">
+          {cleaning ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+          Run cleanup now
+        </button>
+        {cleanupResult && (
+          <p className="text-xs text-gray-500 w-full">
+            Deleted {cleanupResult.activityLogsDeleted} old logs and {cleanupResult.rateLimitEventsDeleted} rate-limit events.
+          </p>
+        )}
       </div>
 
       <div className="card overflow-x-auto">
