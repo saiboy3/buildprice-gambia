@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/context'
 import { useRouter } from 'next/navigation'
-import { Star, Plus, Trash2, Loader2, CheckCircle, XCircle, MapPin } from 'lucide-react'
+import { Star, Plus, Trash2, Loader2, CheckCircle, XCircle, MapPin, AlertTriangle } from 'lucide-react'
 import { GAMBIA_LOCATIONS } from '@/lib/location'
 
 type PromotedListing = {
@@ -32,6 +32,8 @@ export default function PromotedListingsPage() {
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
   const [showForm,    setShowForm]    = useState(false)
+  const [confirming,  setConfirming]  = useState<PromotedListing | null>(null)
+  const [deleting,    setDeleting]    = useState(false)
 
   // Form state
   const [supplierId,  setSupplierId]  = useState('')
@@ -91,13 +93,19 @@ export default function PromotedListingsPage() {
     }
   }
 
-  async function deleteListing(id: string) {
-    if (!confirm('Delete this promoted listing?')) return
-    await fetch(`/api/admin/promoted-listings?id=${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    loadListings()
+  async function confirmDelete() {
+    if (!confirming) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/admin/promoted-listings?id=${confirming.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setConfirming(null)
+      loadListings()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const placementBadge = (p: string) => {
@@ -228,7 +236,7 @@ export default function PromotedListingsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => deleteListing(listing.id)}
+                          onClick={() => setConfirming(listing)}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1"
                           title="Delete"
                         >
@@ -243,6 +251,28 @@ export default function PromotedListingsPage() {
           </div>
         )}
       </div>
+
+      {confirming && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-sm w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={18} className="text-red-500" />
+              <h3 className="font-bold text-gray-900">Delete promoted listing</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              This immediately stops the <span className="font-semibold">{confirming.placement.charAt(0) + confirming.placement.slice(1).toLowerCase()}</span> promotion for{' '}
+              <span className="font-semibold">{confirming.supplier.name}</span>. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete} disabled={deleting} className="btn-primary bg-red-600 hover:bg-red-700 border-red-600">
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete listing
+              </button>
+              <button onClick={() => setConfirming(null)} disabled={deleting} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
