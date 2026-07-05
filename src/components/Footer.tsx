@@ -69,8 +69,13 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-gray-800 py-4 text-center text-xs text-gray-600">
-        © {new Date().getFullYear()} BuildPriceGambia. {tr('footer.copy')}
+      <div className="border-t border-gray-800 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-xs text-gray-600">
+        <span>© {new Date().getFullYear()} BuildPriceGambia. {tr('footer.copy')}</span>
+        <span className="flex items-center gap-3">
+          <Link href="/privacy" className="hover:text-primary-400 transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-primary-400 transition-colors">Terms of Service</Link>
+          <Link href="/account" className="hover:text-primary-400 transition-colors">My Data</Link>
+        </span>
       </div>
     </footer>
   )

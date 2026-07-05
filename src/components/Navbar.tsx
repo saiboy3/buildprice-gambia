@@ -127,7 +127,7 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-3 border-l border-gray-200 pl-3 ml-1">
-              <span className="text-gray-800 max-w-[100px] truncate">{user.name}</span>
+              <Link href="/account" className="text-gray-800 max-w-[100px] truncate hover:text-primary-600 transition-colors" title="My Account & Privacy">{user.name}</Link>
               <button onClick={logout} className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors">
                 <LogOut size={15} /> Sign out
               </button>
@@ -197,7 +197,10 @@ export default function Navbar() {
         </div>
 
         {user ? (
-          <button onClick={() => { logout(); setOpen(false) }} className="text-left text-red-500">Sign out</button>
+          <>
+            <Link href="/account" onClick={() => setOpen(false)}>My Account & Privacy</Link>
+            <button onClick={() => { logout(); setOpen(false) }} className="text-left text-red-500">Sign out</button>
+          </>
         ) : (
           <div className="flex gap-2 pt-1 pb-2">
             <Link href="/login"    onClick={() => setOpen(false)} className="btn-secondary flex-1 text-center">Sign in</Link>

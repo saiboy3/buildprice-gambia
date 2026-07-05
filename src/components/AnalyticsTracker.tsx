@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { getUserLocation } from '@/lib/location'
+import { hasAnalyticsConsent } from '@/lib/consent'
 
 function getOrCreateSession(): string {
   let sid = sessionStorage.getItem('_bpg_sid')
@@ -26,6 +27,7 @@ export default function AnalyticsTracker() {
   useEffect(() => {
     if (pathname === lastPath.current) return
     lastPath.current = pathname
+    if (!hasAnalyticsConsent()) return
 
     const sessionId = getOrCreateSession()
     const referrer = document.referrer || undefined

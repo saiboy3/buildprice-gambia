@@ -11,6 +11,7 @@ import { SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useT } from '@/lib/LanguageContext'
 import { getUserLocation } from '@/lib/location'
+import { hasAnalyticsConsent } from '@/lib/consent'
 
 type Price = {
   id: string
@@ -58,12 +59,14 @@ export default function SearchClient() {
         if (minPrice) data = data.filter(p => p.price >= parseFloat(minPrice))
         if (maxPrice) data = data.filter(p => p.price <= parseFloat(maxPrice))
         setPrices(data)
-        // track search event
-        fetch('/api/analytics/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q, results: data.length, sessionId: sessionStorage.getItem('_bpg_sid'), location: location || getUserLocation() }),
-        }).catch(() => {})
+        // track search event (only with analytics consent)
+        if (hasAnalyticsConsent()) {
+          fetch('/api/analytics/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: q, results: data.length, sessionId: sessionStorage.getItem('_bpg_sid'), location: location || getUserLocation() }),
+          }).catch(() => {})
+        }
       })
       .finally(() => setLoading(false))
   }, [q, location, minPrice, maxPrice])

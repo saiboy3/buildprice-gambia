@@ -3,6 +3,7 @@ import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/lib/LanguageContext'
 import { organizationJsonLd, websiteJsonLd } from '@/lib/seo'
+import CookieConsentBanner from '@/components/CookieConsentBanner'
 
 const inter  = Inter({  subsets: ['latin'], variable: '--font-inter',  display: 'swap' })
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap', weight: ['400','600','700','800'] })
@@ -97,7 +98,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          {children}
+          <CookieConsentBanner />
+        </LanguageProvider>
       </body>
     </html>
   )
