@@ -64,7 +64,7 @@ export default function ContractorsPage() {
       {/* ── Hero banner ───────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gray-900 h-52 md:h-64 flex items-end">
         <Image
-          src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1920&q=75"
+          src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1920&q=75"
           alt="Construction contractors at work"
           fill
           priority
@@ -175,7 +175,7 @@ export default function ContractorsPage() {
             {filtered.map(c => {
               const ini   = initials(c.name)
               const bg    = avatarColor(c.name)
-              const smeta = SPECIALTY_META[c.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=70' }
+              const smeta = SPECIALTY_META[c.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=80&h=80&fit=crop&q=70' }
               return (
                 <Link key={c.id} href={`/contractors/${c.id}`}
                   className="card hover:shadow-md hover:border-primary-200 transition-all group overflow-hidden p-0">

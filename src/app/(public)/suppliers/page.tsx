@@ -34,7 +34,7 @@ export default async function SuppliersPage() {
       {/* Hero banner */}
       <section className="relative overflow-hidden bg-gray-900 h-44 md:h-56 flex items-end">
         <Image
-          src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&w=1920&q=75"
+          src="https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=1920&q=75"
           alt="Building materials and hardware supplier"
           fill
           priority

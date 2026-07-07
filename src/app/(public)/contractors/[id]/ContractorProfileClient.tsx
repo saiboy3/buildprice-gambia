@@ -130,7 +130,7 @@ export default function ContractorProfileClient() {
 
   const bg    = avatarColor(contractor.name)
   const ini   = initials(contractor.name)
-  const smeta = SPECIALTY_META[contractor.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&h=80&fit=crop&q=70' }
+  const smeta = SPECIALTY_META[contractor.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=80&h=80&fit=crop&q=70' }
 
   return (
     <div>
