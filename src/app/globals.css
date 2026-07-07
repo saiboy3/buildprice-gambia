@@ -4,27 +4,27 @@
 
 @layer base {
   html { font-family: var(--font-inter), Inter, system-ui, sans-serif; }
-  body { @apply bg-gray-50 text-gray-900; }
+  body { @apply bg-cream-50 text-gray-900; }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-400;
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-400;
   }
   .btn-secondary {
-    @apply btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-300;
+    @apply btn bg-white border-2 border-cream-200 text-primary-900 hover:bg-cream-50 hover:border-cream-300 focus:ring-primary-300;
   }
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-400;
   }
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-400;
+    @apply w-full px-3 py-2.5 border-2 border-cream-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-400;
   }
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-5 card-lift;
+    @apply bg-white rounded-2xl shadow-sm border border-cream-200 p-5 card-lift;
   }
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
@@ -37,23 +37,33 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #fef3e2; }
+::-webkit-scrollbar-thumb { background: #c2410c; border-radius: 3px; }
 
-/* Glassmorphism utility */
+/* Glassmorphism utility — warm cream tint */
 .glass {
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,251,245,0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(253,232,208,0.6);
 }
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6);
+  background: linear-gradient(135deg, #c2410c, #9a3412, #eab308);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Kente-inspired accent stripe */
+.kente-stripe {
+  height: 8px;
+  background: repeating-linear-gradient(90deg,
+    #c2410c 0 24px,
+    #431407 24px 48px,
+    #eab308 48px 72px,
+    #3A7735 72px 96px);
 }
 
 /* Shimmer skeleton */

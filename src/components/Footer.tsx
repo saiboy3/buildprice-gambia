@@ -8,7 +8,8 @@ export default function Footer() {
   const { locale } = useLang()
   const isRTL = locale === 'ar'
   return (
-    <footer className="bg-gray-900 text-gray-400 mt-16" dir={isRTL ? 'rtl' : 'ltr'}>
+    <footer className="bg-primary-950 text-cream-300/70 mt-16" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="kente-stripe" />
       <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="col-span-1 md:col-span-2">
@@ -69,7 +70,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-gray-800 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-xs text-gray-600">
+      <div className="border-t border-primary-900 py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center text-xs text-cream-300/50">
         <span>© {new Date().getFullYear()} BuildPriceGambia. {tr('footer.copy')}</span>
         <span className="flex items-center gap-3">
           <Link href="/privacy" className="hover:text-primary-400 transition-colors">Privacy Policy</Link>

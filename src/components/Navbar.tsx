@@ -49,7 +49,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary-600 shrink-0">
           <HardHat size={22} />
-          <span>BuildPrice<span className="text-gray-900">Gambia</span></span>
+          <span>BuildPrice<span className="text-primary-900">Gambia</span></span>
         </Link>
 
         {/* Desktop nav */}

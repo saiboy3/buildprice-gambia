@@ -5,19 +5,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Terracotta/clay ramp — warm, West-African inspired
         primary: {
-          50:  '#fef9ec',
-          100: '#fdf0c9',
-          200: '#fbde8e',
-          300: '#f9c74f',
-          400: '#f7b32b',
-          500: '#f09212',
-          600: '#d46f0b',
-          700: '#b0500d',
-          800: '#8f3f11',
-          900: '#763512',
-          950: '#431905',
+          50:  '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#ea580c',
+          600: '#c2410c',
+          700: '#9a3412',
+          800: '#7c2d12',
+          900: '#431407',
+          950: '#2b0d03',
         },
+        // Warm cream surfaces used for page backgrounds and panels
+        cream: {
+          50:  '#fffbf5',
+          100: '#fef3e2',
+          200: '#fde8d0',
+          300: '#fbd9b5',
+        },
+        ink: '#431407',
         gambia: {
           red:   '#CE1126',
           green: '#3A7735',

@@ -3,7 +3,6 @@ import { prisma } from '@/lib/db'
 import SearchBar from '@/components/SearchBar'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ShieldCheck, ArrowRight } from 'lucide-react'
 import { faqJsonLd, breadcrumbJsonLd } from '@/lib/seo'
 import HomeContent from '@/components/HomeContent'
@@ -90,43 +89,73 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <div className="page-enter">
 
-        {/* ── Hero ─────────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden bg-gray-900 min-h-[380px] md:min-h-[420px] flex items-center">
-          {/* Background photo */}
-          <Image
-            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=60"
-            alt="Construction site in The Gambia"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center opacity-30"
-          />
-          {/* Single flat overlay — no gradient noise */}
-          <div className="absolute inset-0 bg-gray-900/55" />
-
-          <div className="relative z-10 max-w-2xl mx-auto px-4 py-14 w-full text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight font-display">
-              Construction material prices in The Gambia
-            </h1>
-            <p className="text-gray-300 text-sm md:text-base mb-7 leading-relaxed max-w-lg mx-auto">
-              Compare cement, rebar, sand, timber &amp; more across verified suppliers.
-            </p>
-            <div className="max-w-lg mx-auto">
-              <SearchBar large placeholder="Search: cement, rebar, sand, timber…" />
+        {/* ── Hero — warm, bold, West-African inspired ─────────────────────── */}
+        <section className="bg-cream-50">
+          <div className="max-w-6xl mx-auto grid md:grid-cols-[1.3fr_1fr]">
+            {/* Left: headline + search */}
+            <div className="px-4 md:px-8 py-12 md:py-16 flex flex-col justify-center">
+              <h1 className="text-3xl md:text-5xl font-bold text-primary-900 leading-[1.1] font-display mb-4">
+                Fair prices for every builder<span className="text-primary-600">.</span>
+              </h1>
+              <p className="text-primary-800/80 text-sm md:text-base mb-7 leading-relaxed max-w-md">
+                Compare real market prices for cement, rebar, sand &amp; timber across
+                Banjul, Serrekunda and Brikama — in Dalasi.
+              </p>
+              <div className="max-w-lg">
+                <SearchBar large placeholder="What are you building?" />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {quickLinks.map(link => (
+                  <Link key={link} href={`/search?q=${encodeURIComponent(link)}`}
+                    className="text-xs bg-white hover:bg-cream-100 text-primary-900 px-3 py-1.5 rounded-full border-2 border-cream-200 hover:border-cream-300 font-medium transition-colors">
+                    {link}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-5 mt-7 text-sm text-primary-900">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck size={16} className="text-gambia-green" /> Verified suppliers
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <ArrowRight size={16} className="text-gambia-green" /> Prices on WhatsApp
+                </span>
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
-              {quickLinks.map(link => (
-                <Link key={link} href={`/search?q=${encodeURIComponent(link)}`}
-                  className="text-xs bg-white/10 hover:bg-white/20 text-gray-200 px-3 py-1 rounded-full border border-white/10 transition-colors">
-                  {link}
-                </Link>
-              ))}
+
+            {/* Right: live price panel */}
+            <div className="bg-cream-200 px-5 py-8 md:py-10 flex flex-col justify-center gap-3">
+              <p className="text-xs font-semibold text-primary-800 uppercase tracking-wider mb-1">
+                Live from the market
+              </p>
+              {featured.slice(0, 4).map(price => {
+                const cm = getCatMeta(price.material.category.name)
+                return (
+                  <Link key={price.id} href={`/search?q=${encodeURIComponent(price.material.name)}`}
+                    className="bg-white rounded-xl px-4 py-3 flex items-center justify-between gap-3 hover:shadow-md transition-shadow">
+                    <span className="flex items-center gap-3 min-w-0">
+                      <img src={cm.image} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" loading="lazy" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-primary-900 truncate">{price.material.name}</span>
+                        <span className="block text-xs text-gray-400 truncate">{price.supplier.location}</span>
+                      </span>
+                    </span>
+                    <span className="text-sm font-bold text-gambia-green shrink-0">
+                      D{price.price.toLocaleString()}
+                    </span>
+                  </Link>
+                )
+              })}
+              <Link href="/search" className="text-xs text-primary-800 font-semibold hover:underline flex items-center gap-1 mt-1">
+                See all prices <ArrowRight size={12} />
+              </Link>
             </div>
           </div>
+          {/* Kente-inspired accent stripe */}
+          <div className="kente-stripe" />
         </section>
 
         {/* ── Stat strip ──────────────────────────────────────────────────── */}
-        <section className="bg-white border-b border-gray-100 py-5 px-4">
+        <section className="bg-white border-b border-cream-200 py-5 px-4">
           <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2 text-center">
             {[
               { label: 'Prices',      value: stats.prices },

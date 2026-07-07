@@ -30,10 +30,10 @@ export default function SearchBar({
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder={placeholder}
-          className={`input pl-9 ${large ? 'py-3 text-base' : ''}`}
+          className={`input pl-9 ${large ? 'py-3 text-base border-primary-900 focus:ring-primary-500' : ''}`}
         />
       </div>
-      <button type="submit" className={`btn-primary shrink-0 ${large ? 'px-6 py-3 text-base' : ''}`}>
+      <button type="submit" className={`shrink-0 ${large ? 'btn bg-primary-900 text-cream-50 hover:bg-primary-800 focus:ring-primary-400 px-6 py-3 text-base' : 'btn-primary'}`}>
         Search
       </button>
     </form>
