@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/context'
 import { GAMBIA_LOCATIONS } from '@/lib/location'
-import { SPECIALTY_META } from '@/lib/visual'
+import { SPECIALTY_META, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 import { CheckCircle2, ChevronLeft, Loader2, LogIn, MapPin, Pencil, HardHat, Minus, Plus } from 'lucide-react'
 
 const SPECIALTIES = Object.keys(SPECIALTY_META)
@@ -173,7 +173,8 @@ export default function ContractorProfileWizard() {
                     className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-colors ${selected ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-primary-300'}`}
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden">
-                      <img src={meta.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      <img src={meta.image} srcSet={unsplashSrcSet(meta.image, IMG_WIDTHS.avatarCircle)} sizes="48px"
+                        alt="" className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{s}</span>
                   </button>

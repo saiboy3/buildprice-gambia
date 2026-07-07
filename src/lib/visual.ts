@@ -1,5 +1,33 @@
 // Consistent color + initials utilities used across cards
 
+/**
+ * Builds a srcSet from an Unsplash URL by swapping its `w` (and proportional
+ * `h`, if the URL crops to a fixed aspect ratio) across several widths, so
+ * mobile devices fetch a smaller file instead of the same one used on desktop.
+ */
+export function unsplashSrcSet(url: string, widths: number[]): string {
+  const base = new URL(url)
+  const baseW = Number(base.searchParams.get('w'))
+  const baseH = Number(base.searchParams.get('h'))
+  const ratio = baseW && baseH ? baseH / baseW : null
+
+  return widths
+    .map(w => {
+      const u = new URL(url)
+      u.searchParams.set('w', String(w))
+      if (ratio) u.searchParams.set('h', String(Math.round(w * ratio)))
+      return `${u.toString()} ${w}w`
+    })
+    .join(', ')
+}
+
+// Width tiers for responsive images — pick the set matching the rendered size.
+export const IMG_WIDTHS = {
+  categoryTile: [240, 360, 480, 640],  // ~half-width mobile tile up to desktop grid cell
+  avatarCircle: [80, 120, 160, 240],   // small round trade/thumbnail images
+  heroPanel:    [80, 120, 160],        // 56px live-price thumbnails in the hero
+}
+
 const PALETTE = [
   'bg-rose-500',    'bg-pink-500',  'bg-fuchsia-500', 'bg-purple-500',
   'bg-violet-500',  'bg-indigo-500','bg-blue-500',     'bg-sky-500',

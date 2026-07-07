@@ -8,7 +8,7 @@ import { faqJsonLd, breadcrumbJsonLd } from '@/lib/seo'
 import HomeContent from '@/components/HomeContent'
 import HomeCTASection from '@/components/HomeCTASection'
 import HomeLatestHeading from '@/components/HomeLatestHeading'
-import { CATEGORY_META } from '@/lib/visual'
+import { CATEGORY_META, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 
 export const metadata: Metadata = {
   title: 'BuildPriceGambia – Construction Material Prices in The Gambia',
@@ -133,7 +133,14 @@ export default async function HomePage() {
                   <Link key={price.id} href={`/search?q=${encodeURIComponent(price.material.name)}`}
                     className="bg-white rounded-xl px-4 py-3 flex items-center justify-between gap-3 hover:shadow-md transition-shadow">
                     <span className="flex items-center gap-3 min-w-0">
-                      <img src={cm.image} alt={price.material.name} className="w-14 h-14 rounded-xl object-cover shrink-0" loading="lazy" />
+                      <img
+                        src={cm.image}
+                        srcSet={unsplashSrcSet(cm.image, IMG_WIDTHS.heroPanel)}
+                        sizes="56px"
+                        alt={price.material.name}
+                        className="w-14 h-14 rounded-xl object-cover shrink-0"
+                        loading="lazy"
+                      />
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-primary-900 truncate">{price.material.name}</span>
                         <span className="block text-xs text-gray-400 truncate">{price.supplier.location}</span>
@@ -191,7 +198,14 @@ export default async function HomePage() {
                 <Link key={price.id} href={`/search?q=${encodeURIComponent(price.material.name)}`}
                   className="group flex items-center gap-3 p-3 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-gray-50 transition-colors">
                   <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
-                    <img src={cm.image} alt={cm.label} className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={cm.image}
+                      srcSet={unsplashSrcSet(cm.image, IMG_WIDTHS.avatarCircle)}
+                      sizes="64px"
+                      alt={cm.label}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors text-sm truncate">

@@ -12,7 +12,7 @@ import clsx from 'clsx'
 import { useT } from '@/lib/LanguageContext'
 import { getUserLocation } from '@/lib/location'
 import { hasAnalyticsConsent } from '@/lib/consent'
-import { getCategoryMeta } from '@/lib/visual'
+import { getCategoryMeta, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 
 type Price = {
   id: string
@@ -180,8 +180,14 @@ export default function SearchClient() {
         return (
           <section key={matId} className="mb-10">
             <div className="flex items-center gap-3 mb-3">
-              <img src={cm.image} alt={material.category.name}
-                className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-cream-200" loading="lazy" />
+              <img
+                src={cm.image}
+                srcSet={unsplashSrcSet(cm.image, IMG_WIDTHS.heroPanel)}
+                sizes="56px"
+                alt={material.category.name}
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-cream-200"
+                loading="lazy"
+              />
               <div className="min-w-0">
                 <h2 className="text-lg font-bold text-gray-900 leading-tight">{material.name}</h2>
                 <div className="flex items-center gap-2 mt-0.5">

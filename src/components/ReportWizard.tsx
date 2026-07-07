@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useT, useLang } from '@/lib/LanguageContext'
 import { useAuth } from '@/lib/context'
 import { GAMBIA_LOCATIONS, getUserLocation } from '@/lib/location'
-import { getCategoryMeta } from '@/lib/visual'
+import { getCategoryMeta, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 import { saveDraft, loadDraft, clearDraft, enqueue, flushQueue, getQueue, type ReportDraft } from '@/lib/offlineQueue'
 import { CheckCircle2, ChevronLeft, Loader2, MapPin, LogIn, Navigation, CloudOff } from 'lucide-react'
 
@@ -236,7 +236,8 @@ export default function ReportWizard() {
                     className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-colors ${selected ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-primary-300'}`}
                   >
                     <div className="w-14 h-14 rounded-full overflow-hidden">
-                      <img src={cm.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      <img src={cm.image} srcSet={unsplashSrcSet(cm.image, IMG_WIDTHS.heroPanel)} sizes="56px"
+                        alt="" className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{m.name}</span>
                   </button>

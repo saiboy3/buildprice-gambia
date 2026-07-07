@@ -7,7 +7,7 @@ import {
   MapPin, Star, ShieldCheck, Search, SlidersHorizontal, UserPlus, HardHat,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { avatarColor, SPECIALTY_META } from '@/lib/visual'
+import { avatarColor, SPECIALTY_META, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 
 const SPECIALTIES = [
   'All', 'General Contractor', 'Masonry & Blockwork', 'Roofing',
@@ -145,7 +145,8 @@ export default function ContractorsPage() {
                 )}>
                 {meta && (
                   <div className="w-4 h-4 rounded overflow-hidden shrink-0">
-                    <img src={meta.image} alt={s} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={meta.image} srcSet={unsplashSrcSet(meta.image, IMG_WIDTHS.avatarCircle)} sizes="16px"
+                      alt={s} className="w-full h-full object-cover" loading="lazy" />
                   </div>
                 )}
                 {s}
@@ -182,7 +183,8 @@ export default function ContractorsPage() {
                   {/* Coloured header — trade image reads faster than initials for low-literacy users */}
                   <div className={`${bg} px-4 py-3 flex items-center gap-3`}>
                     <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/60 shrink-0">
-                      <img src={smeta.image} alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={smeta.image} srcSet={unsplashSrcSet(smeta.image, IMG_WIDTHS.avatarCircle)} sizes="56px"
+                        alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="font-bold text-white text-sm leading-tight group-hover:underline truncate">{c.name}</h2>
@@ -201,7 +203,8 @@ export default function ContractorsPage() {
                   <div className="p-4">
                     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${smeta.color} ${smeta.text}`}>
                       <div className="w-4 h-4 rounded overflow-hidden shrink-0">
-                        <img src={smeta.image} alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={smeta.image} srcSet={unsplashSrcSet(smeta.image, IMG_WIDTHS.avatarCircle)} sizes="16px"
+                          alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
                       </div>
                       {c.specialty}
                     </span>

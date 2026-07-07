@@ -1,7 +1,7 @@
 'use client'
 import { useT, useLang } from '@/lib/LanguageContext'
 import Link from 'next/link'
-import { CATEGORY_META } from '@/lib/visual'
+import { CATEGORY_META, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 import { TrendingDown, Zap, MessageSquare, ShieldCheck, ArrowRight } from 'lucide-react'
 import SponsoredBanner from '@/components/SponsoredBanner'
 
@@ -30,8 +30,14 @@ export default function HomeContent() {
             <Link key={cat.label} href={`/search?q=${encodeURIComponent(cat.query)}`}
               className="group rounded-2xl border-2 border-cream-200 bg-white overflow-hidden hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
               <div className="h-24 sm:h-28 w-full overflow-hidden">
-                <img src={cat.image} alt={cat.label}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                <img
+                  src={cat.image}
+                  srcSet={unsplashSrcSet(cat.image, IMG_WIDTHS.categoryTile)}
+                  sizes="(min-width: 640px) 25vw, 50vw"
+                  alt={cat.label}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
               </div>
               <span className="block px-3 py-2.5 text-sm font-semibold leading-tight text-primary-900 group-hover:text-primary-600 text-center">
                 {cat.label}

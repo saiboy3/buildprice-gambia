@@ -10,7 +10,7 @@ import {
   ChevronLeft, HardHat, Loader2,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { avatarColor, initials, SPECIALTY_META } from '@/lib/visual'
+import { avatarColor, initials, SPECIALTY_META, unsplashSrcSet, IMG_WIDTHS } from '@/lib/visual'
 
 type Review = {
   id: string; rating: number; comment: string; projectType: string
@@ -171,7 +171,8 @@ export default function ContractorProfileClient() {
                 </div>
                 <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${smeta.color} ${smeta.text}`}>
                   <div className="w-4 h-4 rounded overflow-hidden shrink-0">
-                    <img src={smeta.image} alt={contractor.specialty} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={smeta.image} srcSet={unsplashSrcSet(smeta.image, IMG_WIDTHS.avatarCircle)} sizes="16px"
+                      alt={contractor.specialty} className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   {contractor.specialty}
                 </span>
