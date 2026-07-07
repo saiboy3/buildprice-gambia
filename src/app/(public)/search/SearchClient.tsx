@@ -12,6 +12,7 @@ import clsx from 'clsx'
 import { useT } from '@/lib/LanguageContext'
 import { getUserLocation } from '@/lib/location'
 import { hasAnalyticsConsent } from '@/lib/consent'
+import { getCategoryMeta } from '@/lib/visual'
 
 type Price = {
   id: string
@@ -175,12 +176,19 @@ export default function SearchClient() {
       {Object.entries(grouped).map(([matId, matPrices]) => {
         const material = matPrices[0].material
         const sorted   = [...matPrices].sort((a, b) => a.price - b.price)
+        const cm       = getCategoryMeta(material.category.name)
         return (
           <section key={matId} className="mb-10">
             <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-lg font-bold text-gray-900">{material.name}</h2>
-              <span className="badge badge-blue">{material.category.name}</span>
-              <span className="text-sm text-gray-400">{matPrices.length} supplier{matPrices.length !== 1 ? 's' : ''}</span>
+              <img src={cm.image} alt={material.category.name}
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-cream-200" loading="lazy" />
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-gray-900 leading-tight">{material.name}</h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="badge badge-blue">{material.category.name}</span>
+                  <span className="text-sm text-gray-400">{matPrices.length} supplier{matPrices.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
             </div>
 
             {view === 'table' ? (

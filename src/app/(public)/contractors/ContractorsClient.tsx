@@ -7,7 +7,7 @@ import {
   MapPin, Star, ShieldCheck, Search, SlidersHorizontal, UserPlus, HardHat,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { avatarColor, initials, SPECIALTY_META } from '@/lib/visual'
+import { avatarColor, SPECIALTY_META } from '@/lib/visual'
 
 const SPECIALTIES = [
   'All', 'General Contractor', 'Masonry & Blockwork', 'Roofing',
@@ -173,17 +173,16 @@ export default function ContractorsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {filtered.map(c => {
-              const ini   = initials(c.name)
               const bg    = avatarColor(c.name)
               const smeta = SPECIALTY_META[c.specialty] ?? { color: 'bg-gray-50', text: 'text-gray-700', image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=80&h=80&fit=crop&q=70' }
               return (
                 <Link key={c.id} href={`/contractors/${c.id}`}
                   className="card hover:shadow-md hover:border-primary-200 transition-all group overflow-hidden p-0">
 
-                  {/* Coloured header */}
+                  {/* Coloured header — trade image reads faster than initials for low-literacy users */}
                   <div className={`${bg} px-4 py-3 flex items-center gap-3`}>
-                    <div className="w-11 h-11 rounded-full bg-white/25 flex items-center justify-center text-white font-extrabold text-sm shadow-inner shrink-0">
-                      {ini}
+                    <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/60 shrink-0">
+                      <img src={smeta.image} alt={c.specialty} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="font-bold text-white text-sm leading-tight group-hover:underline truncate">{c.name}</h2>

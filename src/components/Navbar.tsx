@@ -45,9 +45,9 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-[60] glass border-b border-white/20 shadow-sm" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary-600 shrink-0">
+      <div className="w-full px-4 md:px-6 h-14 flex items-center justify-between gap-6">
+        {/* Logo — pinned to the far left, clear of the nav links */}
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary-600 shrink-0 mr-auto">
           <HardHat size={22} />
           <span>BuildPrice<span className="text-primary-900">Gambia</span></span>
         </Link>

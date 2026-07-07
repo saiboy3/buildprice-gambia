@@ -25,14 +25,17 @@ export default function HomeContent() {
             {tr('home.categories.all')} <ArrowRight size={14} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {CATEGORY_META.map(cat => (
             <Link key={cat.label} href={`/search?q=${encodeURIComponent(cat.query)}`}
-              className="group flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border border-gray-100 bg-white hover:border-primary-200 hover:bg-gray-50 transition-colors text-center cursor-pointer">
-              <div className="w-11 h-11 rounded-full overflow-hidden">
-                <img src={cat.image} alt={cat.label} className="w-full h-full object-cover" loading="lazy" />
+              className="group rounded-2xl border-2 border-cream-200 bg-white overflow-hidden hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="h-24 sm:h-28 w-full overflow-hidden">
+                <img src={cat.image} alt={cat.label}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
               </div>
-              <span className="text-xs font-medium leading-tight text-gray-600 group-hover:text-primary-600">{cat.label}</span>
+              <span className="block px-3 py-2.5 text-sm font-semibold leading-tight text-primary-900 group-hover:text-primary-600 text-center">
+                {cat.label}
+              </span>
             </Link>
           ))}
         </div>
